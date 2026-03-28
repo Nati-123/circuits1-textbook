@@ -1,0 +1,10 @@
+site_name: Circuits 1 Textbook
+
+theme:
+  name: material
+
+nav:
+  - Home: index.md
+  - Chapters:
+      - Chapter Overview: chapters/index.md
+      - Chapter 3: chapters/chapter3.md
