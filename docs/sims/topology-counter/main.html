@@ -6,481 +6,338 @@
 <title>Circuit Topology Explorer</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Roboto, sans-serif; background: #f7f9fc; color: #1a1a2e; display: flex; justify-content: center; padding: 20px 16px; }
+  .container { max-width: 720px; width: 100%; }
+  h2 { text-align: center; font-size: 1.25rem; font-weight: 700; color: #5A3EED; margin-bottom: 4px; }
+  .subtitle { text-align: center; font-size: 0.92rem; color: #555; margin-bottom: 16px; line-height: 1.5; }
 
-  body {
-    font-family: 'Segoe UI', Roboto, sans-serif;
-    background: #f5f7fb;
-    color: #1a1a2e;
-    display: flex;
-    justify-content: center;
-    padding: 24px 12px;
-    min-height: 100vh;
-  }
+  .selector { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
+  .selector button { padding: 8px 18px; border: 2px solid #5A3EED; border-radius: 20px; background: #fff; color: #5A3EED; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .selector button:hover { background: #F8F6FF; }
+  .selector button.active { background: #5A3EED; color: #fff; }
 
-  .app {
-    width: 100%;
-    max-width: 720px;
-  }
+  .canvas-card { background: #fff; border: 2px solid #A8C8FF; border-radius: 12px; padding: 14px; margin-bottom: 12px; text-align: center; box-shadow: 0 2px 8px rgba(90,62,237,0.07); }
+  .circuit-label { font-size: 1rem; font-weight: 700; color: #333; margin-bottom: 2px; }
+  .circuit-desc { font-size: 0.82rem; color: #777; margin-bottom: 10px; }
+  canvas { display: block; margin: 0 auto; border-radius: 8px; background: #FAFCFF; }
 
-  h1 {
-    text-align: center;
-    font-size: 1.6rem;
-    color: #5A3EED;
-    margin-bottom: 4px;
-  }
+  .toggle-row { display: flex; gap: 8px; justify-content: center; margin: 12px 0; flex-wrap: wrap; }
+  .toggle-btn { padding: 7px 16px; border: 2px solid #ccc; border-radius: 8px; background: #fff; font-size: 0.84rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .toggle-btn.on-nodes { border-color: #1565C0; background: #E3F2FD; color: #1565C0; }
+  .toggle-btn.on-branches { border-color: #5A3EED; background: #F3F0FF; color: #5A3EED; }
+  .toggle-btn.on-loops { border-color: #E65100; background: #FFF3E0; color: #E65100; }
 
-  .subtitle {
-    text-align: center;
-    font-size: 0.95rem;
-    color: #666;
-    margin-bottom: 20px;
-  }
+  .count-btn { display: block; margin: 0 auto; padding: 9px 28px; border: none; border-radius: 20px; background: #5A3EED; color: #fff; font-size: 0.92rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .count-btn:hover { background: #4830c9; }
 
-  /* Circuit selector buttons */
-  .selector {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-  }
-
-  .selector button {
-    padding: 9px 20px;
-    border: 2px solid #5A3EED;
-    border-radius: 24px;
-    background: #fff;
-    color: #5A3EED;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .selector button:hover {
-    background: #ede8ff;
-  }
-
-  .selector button.active {
-    background: #5A3EED;
-    color: #fff;
-  }
-
-  /* Canvas card */
-  .canvas-card {
-    background: #fff;
-    border-radius: 12px;
-    padding: 16px;
-    box-shadow: 0 2px 12px rgba(90,62,237,0.08);
-    margin-bottom: 16px;
-    text-align: center;
-  }
-
-  .canvas-card h2 {
-    font-size: 1.1rem;
-    color: #333;
-    margin-bottom: 4px;
-  }
-
-  .canvas-card .desc {
-    font-size: 0.85rem;
-    color: #777;
-    margin-bottom: 12px;
-  }
-
-  canvas {
-    display: block;
-    margin: 0 auto;
-    border: 1px solid #dde3f0;
-    border-radius: 8px;
-    background: #fafcff;
-  }
-
-  /* Count button */
-  .count-btn {
-    display: block;
-    margin: 16px auto 0;
-    padding: 10px 32px;
-    border: none;
-    border-radius: 24px;
-    background: #5A3EED;
-    color: #fff;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .count-btn:hover {
-    background: #4830c9;
-  }
-
-  /* Results panel */
-  .results {
-    background: #EEF4FF;
-    border-radius: 12px;
-    padding: 20px 24px;
-    box-shadow: 0 2px 8px rgba(90,62,237,0.06);
-    display: none;
-  }
-
+  .results { background: #EEF4FF; border: 2px solid #A8C8FF; border-radius: 12px; padding: 16px 20px; display: none; }
   .results.show { display: block; }
+  .results h3 { font-size: 0.95rem; color: #5A3EED; margin-bottom: 10px; text-align: center; }
 
-  .results h3 {
-    font-size: 1rem;
-    color: #5A3EED;
-    margin-bottom: 12px;
-  }
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+  .metric { background: #fff; border-radius: 10px; padding: 10px 8px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  .metric .label { font-size: 0.72rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+  .metric .val { font-size: 1.4rem; font-weight: 700; }
+  .metric .val.c-node { color: #1565C0; }
+  .metric .val.c-branch { color: #5A3EED; }
+  .metric .val.c-loop { color: #E65100; }
+  .metric .val.c-mesh { color: #2E7D32; }
 
-  .metrics {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 10px;
-    margin-bottom: 16px;
-  }
+  .formula-box { background: #fff; border-radius: 10px; padding: 12px 14px; font-size: 0.88rem; line-height: 1.6; }
+  .formula-box .eq { font-weight: 700; color: #333; }
+  .formula-box .pass { color: #2E7D32; font-weight: 700; }
 
-  .metric-box {
-    background: #fff;
-    border-radius: 10px;
-    padding: 12px;
-    text-align: center;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-  }
+  .legend { margin-top: 10px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; font-size: 0.8rem; color: #666; }
+  .legend span { display: flex; align-items: center; gap: 4px; }
+  .legend .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .legend .line { width: 18px; height: 3px; border-radius: 2px; }
 
-  .metric-box .label {
-    font-size: 0.78rem;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
-  }
-
-  .metric-box .value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #5A3EED;
-  }
-
-  .formula-check {
-    background: #fff;
-    border-radius: 10px;
-    padding: 14px 16px;
-    font-size: 0.9rem;
-    line-height: 1.6;
-  }
-
-  .formula-check .eq {
-    font-weight: 600;
-    color: #333;
-  }
-
-  .formula-check .pass {
-    color: #16a34a;
-    font-weight: 700;
-  }
-
-  .legend {
-    margin-top: 12px;
-    font-size: 0.82rem;
-    color: #666;
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-
-  .legend span {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-
-  .legend .dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    display: inline-block;
-  }
-
-  .legend .line-swatch {
-    width: 18px;
-    height: 3px;
-    border-radius: 2px;
-    display: inline-block;
-  }
+  .convention { margin-top: 12px; background: #FFF7DD; border: 2px solid #F0D87A; border-radius: 10px; padding: 12px 16px; font-size: 0.84rem; color: #555; line-height: 1.6; }
+  .convention strong { color: #B8860B; }
 </style>
 </head>
 <body>
-<div class="app">
-  <h1>Circuit Topology Explorer</h1>
-  <p class="subtitle">Explore nodes, branches, loops, and meshes in common circuit topologies</p>
+<div class="container">
+  <h2>Circuit Topology Explorer</h2>
+  <p class="subtitle">Explore how nodes, branches, loops, and meshes define circuit structure.</p>
 
   <div class="selector">
-    <button class="active" onclick="selectCircuit(0)">Simple Loop</button>
-    <button onclick="selectCircuit(1)">Parallel</button>
-    <button onclick="selectCircuit(2)">Bridge (Wheatstone)</button>
+    <button class="active" onclick="pick(0)">Simple Loop</button>
+    <button onclick="pick(1)">Parallel</button>
+    <button onclick="pick(2)">Bridge (Wheatstone)</button>
   </div>
 
   <div class="canvas-card">
-    <h2 id="circuitTitle">Simple Loop Circuit</h2>
-    <p class="desc" id="circuitDesc">A single closed path with components in series.</p>
-    <canvas id="cv" width="680" height="340"></canvas>
-    <button class="count-btn" id="countBtn" onclick="revealCount()">Count Topology Elements</button>
+    <div class="circuit-label" id="cTitle">Simple Loop Circuit</div>
+    <div class="circuit-desc" id="cDesc">A single closed path — 4 nodes, 4 branches, 1 mesh.</div>
+    <canvas id="cv" width="680" height="300"></canvas>
+  </div>
+
+  <div class="toggle-row">
+    <button class="toggle-btn" id="tNodes" onclick="toggle('nodes')">Show Nodes</button>
+    <button class="toggle-btn" id="tBranches" onclick="toggle('branches')">Show Branches</button>
+    <button class="toggle-btn" id="tLoops" onclick="toggle('loops')">Show Loops</button>
+    <button class="count-btn" onclick="countAll()">Count All Elements</button>
   </div>
 
   <div class="results" id="results">
     <h3>Topology Results</h3>
     <div class="metrics">
-      <div class="metric-box"><div class="label">Nodes (n)</div><div class="value" id="mNodes">-</div></div>
-      <div class="metric-box"><div class="label">Branches (b)</div><div class="value" id="mBranches">-</div></div>
-      <div class="metric-box"><div class="label">Loops (l)</div><div class="value" id="mLoops">-</div></div>
-      <div class="metric-box"><div class="label">Meshes (m)</div><div class="value" id="mMeshes">-</div></div>
+      <div class="metric"><div class="label">Nodes (n)</div><div class="val c-node" id="rN">—</div></div>
+      <div class="metric"><div class="label">Branches (b)</div><div class="val c-branch" id="rB">—</div></div>
+      <div class="metric"><div class="label">Loops (l)</div><div class="val c-loop" id="rL">—</div></div>
+      <div class="metric"><div class="label">Meshes (m)</div><div class="val c-mesh" id="rM">—</div></div>
     </div>
-    <div class="formula-check" id="formulaBox"></div>
+    <div class="formula-box" id="fBox"></div>
     <div class="legend">
-      <span><span class="dot" style="background:#e74c3c;"></span> Nodes</span>
-      <span><span class="line-swatch" style="background:#5A3EED;"></span> Branches (highlighted)</span>
+      <span><span class="dot" style="background:#1565C0;"></span> Nodes</span>
+      <span><span class="line" style="background:#5A3EED;"></span> Branches</span>
+      <span><span class="dot" style="background:#E65100; border-radius:3px; width:14px; height:14px;"></span> Loop/Mesh paths</span>
     </div>
+  </div>
+
+  <div class="convention">
+    <strong>Topology Formula:</strong> b = n − 1 + m, where <strong>b</strong> = branches, <strong>n</strong> = nodes, <strong>m</strong> = independent meshes. A <strong>mesh</strong> is a loop containing no other loops inside it.
   </div>
 </div>
 
 <script>
-// roundRect polyfill for older browsers
-if (!CanvasRenderingContext2D.prototype.roundRect) {
-  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
-    if (typeof r === 'number') r = [r, r, r, r];
-    const [tl, tr, br, bl] = r;
-    this.moveTo(x + tl, y);
-    this.lineTo(x + w - tr, y);
-    this.arcTo(x + w, y, x + w, y + tr, tr);
-    this.lineTo(x + w, y + h - br);
-    this.arcTo(x + w, y + h, x + w - br, y + h, br);
-    this.lineTo(x + bl, y + h);
-    this.arcTo(x, y + h, x, y + h - bl, bl);
-    this.lineTo(x, y + tl);
-    this.arcTo(x, y, x + tl, y, tl);
-    this.closePath();
-    return this;
-  };
-}
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
 
-const canvas = document.getElementById('cv');
-const ctx = canvas.getContext('2d');
-
-// ── Circuit definitions ──────────────────────────────────────
 const circuits = [
-  {
-    name: 'Simple Loop Circuit',
-    desc: 'A single closed path with components in series.',
-    nodes: [
-      {x:160, y:80},  // 0 top-left
-      {x:520, y:80},  // 1 top-right
-      {x:520, y:260}, // 2 bottom-right
-      {x:160, y:260}  // 3 bottom-left
-    ],
-    // each branch: [fromNode, toNode, component label]
-    branches: [
-      [0, 1, 'R1'],
-      [1, 2, 'R2'],
-      [2, 3, 'R3'],
-      [3, 0, 'Vs']
-    ],
-    n: 4, b: 4, l: 1, m: 1
-  },
-  {
-    name: 'Parallel Circuit',
-    desc: 'Two nodes connected by three parallel branches.',
-    nodes: [
-      {x:160, y:170}, // 0 left
-      {x:520, y:170}  // 1 right
-    ],
-    branches: [
-      [0, 1, 'R1', {cx:340, cy:70}],   // top path
-      [0, 1, 'Vs', {cx:340, cy:170}],   // middle path
-      [0, 1, 'R2', {cx:340, cy:270}]    // bottom path
-    ],
-    n: 2, b: 3, l: 2, m: 2
-  },
-  {
-    name: 'Bridge (Wheatstone) Circuit',
-    desc: 'A classic bridge circuit with five resistors and a source.',
-    nodes: [
-      {x:340, y:40},  // 0 top
-      {x:160, y:150}, // 1 left
-      {x:520, y:150}, // 2 right
-      {x:340, y:260}, // 3 bottom
-    ],
-    branches: [
-      [0, 1, 'R1'],
-      [0, 2, 'R2'],
-      [1, 2, 'R5'],
-      [1, 3, 'R3'],
-      [2, 3, 'R4'],
-      [3, 0, 'Vs', {cx:570, cy:150}]
-    ],
-    n: 4, b: 6, l: 3, m: 3
-  }
+  { name:'Simple Loop Circuit', desc:'A single closed path — 4 nodes, 4 branches, 1 mesh.',
+    nodes:[ {x:140,y:60,l:'A'},{x:540,y:60,l:'B'},{x:540,y:240,l:'C'},{x:140,y:240,l:'D'} ],
+    branches:[ [0,1,'R₁'],[1,2,'R₂'],[2,3,'R₃'],[3,0,'Vs',true] ],
+    loops:[ [0,1,2,3] ],
+    n:4, b:4, l:1, m:1 },
+  { name:'Parallel Circuit', desc:'Two nodes connected by three parallel branches — 2 nodes, 3 branches, 2 meshes.',
+    nodes:[ {x:140,y:150,l:'A'},{x:540,y:150,l:'B'} ],
+    branches:[ [0,1,'R₁',false,{cx:340,cy:40}],[0,1,'Vs',true,{cx:340,cy:150}],[0,1,'R₂',false,{cx:340,cy:260}] ],
+    loops:[ [0,0,1],[1,1,2] ],
+    n:2, b:3, l:2, m:2 },
+  { name:'Bridge (Wheatstone) Circuit', desc:'Classic bridge — 4 nodes, 6 branches, 3 meshes.',
+    nodes:[ {x:340,y:40,l:'A'},{x:140,y:160,l:'B'},{x:540,y:160,l:'C'},{x:340,y:280,l:'D'} ],
+    branches:[ [0,1,'R₁'],[0,2,'R₂'],[1,2,'R₅'],[1,3,'R₃'],[2,3,'R₄'],[3,0,'Vs',true,{cx:580,cy:160}] ],
+    loops:[ [0,2,0],[2,4,3],[0,1,2,3,4] ],
+    n:4, b:6, l:3, m:3 }
 ];
 
-let currentIdx = 0;
-let revealed = false;
+let cur = 0;
+let show = { nodes:false, branches:false, loops:false };
+let animFrame = 0;
 
-// ── Drawing helpers ──────────────────────────────────────────
-function clearCanvas() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+function pick(i) {
+  cur = i;
+  show = { nodes:false, branches:false, loops:false };
+  document.getElementById('results').classList.remove('show');
+  updateToggles();
+  document.querySelectorAll('.selector button').forEach((b,j) => b.classList.toggle('active', j===i));
+  const c = circuits[i];
+  document.getElementById('cTitle').textContent = c.name;
+  document.getElementById('cDesc').textContent = c.desc;
+  draw();
 }
 
-function drawComponent(x, y, label) {
-  // small zigzag or box for component
-  const isSource = label.startsWith('V');
-  const w = 36, h = 18;
+function toggle(what) {
+  show[what] = !show[what];
+  updateToggles();
+  draw();
+}
+
+function updateToggles() {
+  document.getElementById('tNodes').className = 'toggle-btn' + (show.nodes ? ' on-nodes' : '');
+  document.getElementById('tBranches').className = 'toggle-btn' + (show.branches ? ' on-branches' : '');
+  document.getElementById('tLoops').className = 'toggle-btn' + (show.loops ? ' on-loops' : '');
+}
+
+function countAll() {
+  show = { nodes:true, branches:true, loops:true };
+  updateToggles();
+  draw();
+  const c = circuits[cur];
+  document.getElementById('rN').textContent = c.n;
+  document.getElementById('rB').textContent = c.b;
+  document.getElementById('rL').textContent = c.l;
+  document.getElementById('rM').textContent = c.m;
+  const exp = (c.n - 1) + c.m;
+  document.getElementById('fBox').innerHTML =
+    '<div class="eq">b = n − 1 + m</div>' +
+    '<div style="margin-top:4px;">' + c.b + ' = ' + c.n + ' − 1 + ' + c.m +
+    ' → ' + c.b + ' = ' + exp + ' <span class="pass">✓ Verified</span></div>';
+  document.getElementById('results').classList.add('show');
+}
+
+// ── Drawing ──
+function draw() {
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = 680 * dpr; cv.height = 300 * dpr;
+  cv.style.width = '680px'; cv.style.height = '300px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, 680, 300);
+  const c = circuits[cur];
+
+  // Draw loop highlights first (behind everything)
+  if (show.loops) drawLoops(c);
+  // Draw branches
+  c.branches.forEach((br, i) => drawBranch(c, br, i));
+  // Draw nodes on top
+  c.nodes.forEach((nd, i) => drawNode(nd, i));
+}
+
+function drawLoops(c) {
+  const colors = ['rgba(230,81,0,0.12)', 'rgba(46,125,50,0.12)', 'rgba(21,101,192,0.12)'];
+  const strokes = ['#E65100', '#2E7D32', '#1565C0'];
+  c.loops.forEach((loop, li) => {
+    if (cur === 1) {
+      // Parallel: loops are pairs of curved branches
+      drawParallelLoop(c, loop, colors[li], strokes[li], li);
+    } else {
+      // Simple loop / bridge: polygon through nodes
+      drawPolygonLoop(c, loop, colors[li], strokes[li], li);
+    }
+  });
+}
+
+function drawPolygonLoop(c, nodeIdxs, fillColor, strokeColor, li) {
   ctx.save();
-  if (isSource) {
-    ctx.beginPath();
-    ctx.arc(x, y, 14, 0, Math.PI * 2);
-    ctx.strokeStyle = '#e67e22';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.fillStyle = '#e67e22';
-    ctx.font = '600 11px Segoe UI, Roboto, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('+', x - 4, y);
-    ctx.fillText('-', x + 5, y);
-  } else {
-    ctx.fillStyle = '#fff';
-    ctx.strokeStyle = '#5A3EED';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.roundRect(x - w/2, y - h/2, w, h, 4);
-    ctx.fill();
-    ctx.stroke();
-  }
-  // label
-  ctx.fillStyle = '#333';
-  ctx.font = '600 12px Segoe UI, Roboto, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'bottom';
-  ctx.fillText(label, x, y - (isSource ? 18 : 14));
+  ctx.beginPath();
+  const pts = nodeIdxs.map(i => c.nodes[i]);
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.closePath();
+  ctx.fillStyle = fillColor;
+  ctx.fill();
+  ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = 2.5;
+  ctx.setLineDash([8, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  // Label
+  let cx = 0, cy = 0;
+  pts.forEach(p => { cx += p.x; cy += p.y; });
+  cx /= pts.length; cy /= pts.length;
+  ctx.font = '700 12px Segoe UI'; ctx.fillStyle = strokeColor; ctx.textAlign = 'center';
+  ctx.fillText('Mesh ' + (li + 1), cx, cy + 4);
   ctx.restore();
 }
 
-function midpoint(a, b) {
-  return {x: (a.x + b.x) / 2, y: (a.y + b.y) / 2};
+function drawParallelLoop(c, brIdxs, fillColor, strokeColor, li) {
+  ctx.save();
+  const n0 = c.nodes[0], n1 = c.nodes[1];
+  const b1 = c.branches[brIdxs[0]], b2 = c.branches[brIdxs[1]];
+  const cp1 = b1[4] || {cx:(n0.x+n1.x)/2, cy:80};
+  const cp2 = b2[4] || {cx:(n0.x+n1.x)/2, cy:220};
+  ctx.beginPath();
+  ctx.moveTo(n0.x, n0.y);
+  ctx.quadraticCurveTo(cp1.cx, cp1.cy, n1.x, n1.y);
+  ctx.quadraticCurveTo(cp2.cx, cp2.cy, n0.x, n0.y);
+  ctx.closePath();
+  ctx.fillStyle = fillColor; ctx.fill();
+  ctx.strokeStyle = strokeColor; ctx.lineWidth = 2.5; ctx.setLineDash([8, 4]); ctx.stroke(); ctx.setLineDash([]);
+  const my = (cp1.cy + cp2.cy) / 2;
+  ctx.font = '700 12px Segoe UI'; ctx.fillStyle = strokeColor; ctx.textAlign = 'center';
+  ctx.fillText('Mesh ' + (li + 1), 340, my + 4);
+  ctx.restore();
 }
 
-function drawBranch(c, br, highlight) {
-  const n0 = c.nodes[br[0]];
-  const n1 = c.nodes[br[1]];
-  const label = br[2];
-  const curvePoint = br[3]; // optional curve-through point
+function drawBranch(c, br, idx) {
+  const n0 = c.nodes[br[0]], n1 = c.nodes[br[1]];
+  const label = br[2], isSource = br[3];
+  const cp = br[4];
+  const hl = show.branches;
 
   ctx.save();
-  ctx.strokeStyle = highlight ? '#5A3EED' : '#aab4cc';
-  ctx.lineWidth = highlight ? 3 : 2;
+  ctx.strokeStyle = hl ? '#5A3EED' : '#B0BEC5';
+  ctx.lineWidth = hl ? 3 : 2;
   ctx.beginPath();
-
-  if (curvePoint) {
-    // Draw curved path through control point
-    const cp = curvePoint;
+  if (cp) {
     ctx.moveTo(n0.x, n0.y);
     ctx.quadraticCurveTo(cp.cx, cp.cy, n1.x, n1.y);
-    ctx.stroke();
-    // Component at the curve midpoint
-    const t = 0.5;
-    const mx = (1-t)*(1-t)*n0.x + 2*(1-t)*t*cp.cx + t*t*n1.x;
-    const my = (1-t)*(1-t)*n0.y + 2*(1-t)*t*cp.cy + t*t*n1.y;
-    drawComponent(mx, my, label);
   } else {
-    ctx.moveTo(n0.x, n0.y);
-    ctx.lineTo(n1.x, n1.y);
-    ctx.stroke();
-    const mid = midpoint(n0, n1);
-    drawComponent(mid.x, mid.y, label);
+    ctx.moveTo(n0.x, n0.y); ctx.lineTo(n1.x, n1.y);
+  }
+  ctx.stroke();
+
+  // Component
+  let mx, my;
+  if (cp) {
+    mx = 0.25*n0.x + 0.5*cp.cx + 0.25*n1.x;
+    my = 0.25*n0.y + 0.5*cp.cy + 0.25*n1.y;
+  } else {
+    mx = (n0.x + n1.x) / 2; my = (n0.y + n1.y) / 2;
+  }
+
+  if (isSource) {
+    ctx.beginPath(); ctx.arc(mx, my, 13, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.strokeStyle = '#E65100'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.font = '700 11px Segoe UI'; ctx.fillStyle = '#E65100'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('+', mx - 5, my); ctx.fillText('−', mx + 5, my);
+    ctx.font = '600 11px Segoe UI'; ctx.fillStyle = '#E65100'; ctx.textBaseline = 'bottom';
+    ctx.fillText(label, mx, my - 16);
+  } else {
+    // Zigzag resistor
+    drawZigzag(mx, my, n0, n1, cp);
+    ctx.font = '600 11px Segoe UI'; ctx.fillStyle = hl ? '#5A3EED' : '#555'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    const offsetY = cp ? (cp.cy < 150 ? -12 : 20) : -12;
+    ctx.fillText(label, mx, my + offsetY);
+  }
+
+  // Branch index label if highlighting
+  if (hl) {
+    ctx.font = '700 10px Segoe UI'; ctx.fillStyle = '#5A3EED'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    const ly = cp ? (cp.cy < 150 ? my - 24 : my + 22) : my + 10;
+    ctx.fillText('b' + (idx + 1), mx + 20, ly);
   }
   ctx.restore();
 }
 
-function drawNode(node, idx, highlight) {
+function drawZigzag(mx, my, n0, n1, cp) {
+  // Draw a small zigzag symbol at the midpoint
+  let angle;
+  if (cp) {
+    // Tangent at midpoint of quadratic
+    const tx = n1.x - n0.x, ty = n1.y - n0.y;
+    angle = Math.atan2(ty, tx);
+  } else {
+    angle = Math.atan2(n1.y - n0.y, n1.x - n0.x);
+  }
   ctx.save();
-  const r = highlight ? 10 : 6;
+  ctx.translate(mx, my);
+  ctx.rotate(angle);
+  const w = 20, amp = 6, segs = 4;
   ctx.beginPath();
-  ctx.arc(node.x, node.y, r, 0, Math.PI * 2);
-  ctx.fillStyle = highlight ? '#e74c3c' : '#5a6a8a';
+  ctx.moveTo(-w, 0);
+  for (let i = 0; i <= segs; i++) {
+    const x = -w + (2 * w * i / segs);
+    const y = (i === 0 || i === segs) ? 0 : ((i % 2 === 1) ? -amp : amp);
+    ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#5A3EED'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.restore();
+}
+
+function drawNode(nd, idx) {
+  const hl = show.nodes;
+  const r = hl ? 9 : 5;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(nd.x, nd.y, r, 0, Math.PI * 2);
+  ctx.fillStyle = hl ? '#1565C0' : '#78909C';
   ctx.fill();
-  if (highlight) {
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    // node label
-    ctx.fillStyle = '#e74c3c';
-    ctx.font = '700 13px Segoe UI, Roboto, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText('n' + idx, node.x, node.y - 14);
+  if (hl) {
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+    // Glow
+    ctx.beginPath(); ctx.arc(nd.x, nd.y, r + 4, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(21,101,192,0.25)'; ctx.lineWidth = 3; ctx.stroke();
+    // Label
+    ctx.font = '700 13px Segoe UI'; ctx.fillStyle = '#1565C0'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText(nd.l, nd.x, nd.y - 14);
   }
   ctx.restore();
 }
 
-function draw() {
-  clearCanvas();
-  const c = circuits[currentIdx];
-
-  // Draw branches
-  c.branches.forEach(br => drawBranch(c, br, revealed));
-
-  // Draw nodes
-  c.nodes.forEach((nd, i) => drawNode(nd, i, revealed));
-}
-
-// Special draw for bridge circuit with the Vs branch going around the outside
-// (already handled by curvePoint in branch definitions)
-
-// ── Interaction ──────────────────────────────────────────────
-function selectCircuit(idx) {
-  currentIdx = idx;
-  revealed = false;
-  document.getElementById('results').classList.remove('show');
-  document.getElementById('countBtn').textContent = 'Count Topology Elements';
-
-  // Update selector buttons
-  const btns = document.querySelectorAll('.selector button');
-  btns.forEach((b, i) => b.classList.toggle('active', i === idx));
-
-  // Update title/desc
-  const c = circuits[idx];
-  document.getElementById('circuitTitle').textContent = c.name;
-  document.getElementById('circuitDesc').textContent = c.desc;
-
-  draw();
-}
-
-function revealCount() {
-  revealed = true;
-  draw();
-
-  const c = circuits[currentIdx];
-  document.getElementById('mNodes').textContent = c.n;
-  document.getElementById('mBranches').textContent = c.b;
-  document.getElementById('mLoops').textContent = c.l;
-  document.getElementById('mMeshes').textContent = c.m;
-
-  // Verify formula: b = n - 1 + l  (where l = number of independent loops = meshes for planar)
-  const expected = (c.n - 1) + c.m;
-  const ok = expected === c.b;
-
-  document.getElementById('formulaBox').innerHTML =
-    '<div class="eq">Topology Formula:&ensp; b = n &minus; 1 + m</div>' +
-    '<div style="margin-top:6px;">' +
-    c.b + ' = ' + c.n + ' &minus; 1 + ' + c.m +
-    ' &nbsp;&rarr;&nbsp; ' + c.b + ' = ' + expected +
-    '&ensp;<span class="pass">' + (ok ? 'Verified' : 'Check') + '</span></div>' +
-    '<div style="margin-top:8px;font-size:0.82rem;color:#666;">where <b>b</b> = branches, <b>n</b> = nodes, <b>m</b> = independent meshes</div>';
-
-  document.getElementById('results').classList.add('show');
-  document.getElementById('countBtn').textContent = 'Counted';
-}
-
-// Initial draw
+// Initial
 draw();
 </script>
 </body>
