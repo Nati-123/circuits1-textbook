@@ -2,10 +2,49 @@ site_name: Circuits 1 Interactive Textbook
 
 theme:
   name: material
+  palette:
+    primary: deep purple
+    accent: amber
+  font:
+    text: Roboto
+    code: JetBrains Mono
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.footer
+    - toc.integrate
+    - content.tabs.link
+
+markdown_extensions:
+  - tables
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.highlight
+  - attr_list
+  - md_in_html
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+extra_css: []
 
 nav:
   - Home: index.md
   - Chapter 1: chapters/ch1.md
   - Chapter 2: chapters/ch2.md
-  - Chapter 3: chapters/ch3.md
+  - Chapter 3:
+    - Content: chapters/ch3.md
+    - Quiz: chapters/ch3-quiz.md
+    - Problems: chapters/ch3-problems.md
+    - Glossary: chapters/ch3-glossary.md
+    - References: chapters/ch3-references.md
   - Chapter 4: chapters/ch4.md

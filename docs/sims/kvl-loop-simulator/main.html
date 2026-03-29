@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KVL Loop Simulator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Roboto, sans-serif; background: #f8f9fa; display: flex; justify-content: center; padding: 16px; }
+  .container { max-width: 720px; width: 100%; }
+  h2 { color: #5A3EED; font-size: 1.2rem; margin-bottom: 12px; }
+  .circuit-box { background: #fff; border: 2px solid #A8C8FF; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(90,61,237,0.07); }
+  canvas { display: block; margin: 0 auto 16px; border-radius: 8px; background: #fff; }
+  .controls { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+  .control-group { flex: 1; min-width: 150px; }
+  .control-group label { display: block; font-size: 0.85rem; color: #555; margin-bottom: 4px; font-weight: 600; }
+  .control-group input[type=range] { width: 100%; accent-color: #5A3EED; }
+  .value-display { text-align: right; font-size: 0.85rem; color: #5A3EED; font-weight: 700; }
+  .results { background: #EEF4FF; border: 2px solid #A8C8FF; border-radius: 10px; padding: 16px; }
+  .results h3 { color: #5A3EED; font-size: 1rem; margin-bottom: 10px; }
+  .result-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #d0d8e8; font-size: 0.92rem; }
+  .result-row:last-child { border-bottom: none; }
+  .result-label { color: #555; }
+  .result-value { color: #333; font-weight: 700; }
+  .kvl-check { margin-top: 12px; padding: 12px; border-radius: 8px; font-weight: 700; text-align: center; font-size: 0.95rem; }
+  .kvl-pass { background: #E7F7E7; color: #2E7D32; border: 2px solid #81C784; }
+  .kvl-info { background: #FFF7DD; color: #B8860B; border: 2px solid #F0D87A; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>KVL Loop Voltage Sum Simulator</h2>
+  <div class="circuit-box">
+    <canvas id="circuitCanvas" width="680" height="280"></canvas>
+    <div class="controls">
+      <div class="control-group">
+        <label>Source Voltage (V<sub>s</sub>)</label>
+        <input type="range" id="vs" min="1" max="24" value="12" step="0.5">
+        <div class="value-display" id="vsVal">12.0 V</div>
+      </div>
+      <div class="control-group">
+        <label>R₁ (Ω)</label>
+        <input type="range" id="r1" min="100" max="5000" value="1000" step="100">
+        <div class="value-display" id="r1Val">1000 Ω</div>
+      </div>
+      <div class="control-group">
+        <label>R₂ (Ω)</label>
+        <input type="range" id="r2" min="100" max="5000" value="2000" step="100">
+        <div class="value-display" id="r2Val">2000 Ω</div>
+      </div>
+      <div class="control-group">
+        <label>R₃ (Ω)</label>
+        <input type="range" id="r3" min="100" max="5000" value="1000" step="100">
+        <div class="value-display" id="r3Val">1000 Ω</div>
+      </div>
+    </div>
+    <div class="results">
+      <h3>Circuit Analysis</h3>
+      <div class="result-row"><span class="result-label">Total Resistance (R<sub>total</sub>)</span><span class="result-value" id="rTotal">4000 Ω</span></div>
+      <div class="result-row"><span class="result-label">Current (I)</span><span class="result-value" id="current">3.00 mA</span></div>
+      <div class="result-row"><span class="result-label">V<sub>R1</sub> = I × R₁</span><span class="result-value" id="vr1">3.00 V</span></div>
+      <div class="result-row"><span class="result-label">V<sub>R2</sub> = I × R₂</span><span class="result-value" id="vr2">6.00 V</span></div>
+      <div class="result-row"><span class="result-label">V<sub>R3</sub> = I × R₃</span><span class="result-value" id="vr3">3.00 V</span></div>
+      <div class="result-row" style="border-top: 2px solid #5A3EED; padding-top: 10px;">
+        <span class="result-label"><strong>KVL: V<sub>s</sub> − V<sub>R1</sub> − V<sub>R2</sub> − V<sub>R3</sub></strong></span>
+        <span class="result-value" id="kvlSum" style="color: #2E7D32;">= 0.00 V</span>
+      </div>
+      <div class="kvl-check kvl-pass" id="kvlStatus">✓ KVL Verified: Sum of voltages around loop = 0</div>
+    </div>
+  </div>
+</div>
+<script>
+const canvas = document.getElementById('circuitCanvas');
+const ctx = canvas.getContext('2d');
+const sliders = { vs: document.getElementById('vs'), r1: document.getElementById('r1'), r2: document.getElementById('r2'), r3: document.getElementById('r3') };
+const displays = { vs: document.getElementById('vsVal'), r1: document.getElementById('r1Val'), r2: document.getElementById('r2Val'), r3: document.getElementById('r3Val') };
+
+function getValues() {
+  return { vs: parseFloat(sliders.vs.value), r1: parseFloat(sliders.r1.value), r2: parseFloat(sliders.r2.value), r3: parseFloat(sliders.r3.value) };
+}
+
+function formatR(v) { return v >= 1000 ? (v/1000).toFixed(1) + ' kΩ' : v + ' Ω'; }
+function formatI(a) { return a >= 1 ? a.toFixed(2) + ' A' : a >= 0.001 ? (a*1000).toFixed(2) + ' mA' : (a*1e6).toFixed(1) + ' μA'; }
+
+function drawCircuit(vals) {
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  const cx = w/2, cy = h/2;
+  const hw = 280, hh = 100;
+  const l = cx - hw, r = cx + hw, t = cy - hh, b = cy + hh;
+  const I = vals.vs / (vals.r1 + vals.r2 + vals.r3);
+  const vr1 = I * vals.r1, vr2 = I * vals.r2, vr3 = I * vals.r3;
+
+  // Wires
+  ctx.strokeStyle = '#333'; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(l, b); ctx.lineTo(l, t); // left side (battery)
+  ctx.lineTo(l + 140, t); // top left wire
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(l + 200, t); ctx.lineTo(l + 340, t); // between R1 and R2
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(l + 400, t); ctx.lineTo(r, t); ctx.lineTo(r, b); // top right + right side
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(r, b); ctx.lineTo(l + 280, b); // bottom right
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(l + 120, b); ctx.lineTo(l, b); // bottom left
+  ctx.stroke();
+
+  // Battery symbol
+  ctx.lineWidth = 2;
+  const by = cy;
+  ctx.beginPath(); ctx.moveTo(l - 12, by - 18); ctx.lineTo(l + 12, by - 18); ctx.stroke(); // long line (+)
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(l - 7, by - 6); ctx.lineTo(l + 7, by - 6); ctx.stroke(); // short line (-)
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(l, t); ctx.lineTo(l, by - 18); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(l, by - 6); ctx.lineTo(l, b); ctx.stroke();
+  ctx.font = '13px Segoe UI'; ctx.fillStyle = '#5A3EED'; ctx.textAlign = 'center';
+  ctx.fillText('+', l - 20, by - 16);
+  ctx.fillText('−', l - 20, by - 2);
+  ctx.fillStyle = '#333'; ctx.font = 'bold 13px Segoe UI';
+  ctx.fillText('Vs = ' + vals.vs.toFixed(1) + ' V', l - 2, by + 30);
+
+  // Resistor zigzag function
+  function drawResistor(x1, y1, x2, y2, label, vLabel) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const len = Math.sqrt(dx*dx + dy*dy);
+    const ux = dx/len, uy = dy/len;
+    const px = -uy, py = ux;
+    const zigs = 6, amp = 10;
+    const bodyStart = len * 0.15, bodyEnd = len * 0.85;
+    const bodyLen = bodyEnd - bodyStart;
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x1 + ux * bodyStart, y1 + uy * bodyStart);
+    for (let i = 0; i <= zigs; i++) {
+      const frac = bodyStart + (i / zigs) * bodyLen;
+      const sign = (i % 2 === 0) ? 1 : -1;
+      if (i === 0 || i === zigs) {
+        ctx.lineTo(x1 + ux * frac, y1 + uy * frac);
+      } else {
+        ctx.lineTo(x1 + ux * frac + px * amp * sign, y1 + uy * frac + py * amp * sign);
+      }
+    }
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    const mx = (x1+x2)/2, my = (y1+y2)/2;
+    ctx.fillStyle = '#333'; ctx.font = 'bold 12px Segoe UI'; ctx.textAlign = 'center';
+    ctx.fillText(label, mx, my - 18);
+    ctx.fillStyle = '#D32F2F'; ctx.font = '12px Segoe UI';
+    ctx.fillText(vLabel, mx, my - 32);
+  }
+
+  // R1 (top left)
+  drawResistor(l + 140, t, l + 200, t, 'R₁ = ' + formatR(vals.r1), vr1.toFixed(2) + ' V');
+  // R2 (top middle)
+  drawResistor(l + 340, t, l + 400, t, 'R₂ = ' + formatR(vals.r2), vr2.toFixed(2) + ' V');
+  // R3 (bottom)
+  drawResistor(l + 120, b, l + 280, b, 'R₃ = ' + formatR(vals.r3), vr3.toFixed(2) + ' V');
+
+  // Current arrow
+  ctx.fillStyle = '#5A3EED'; ctx.strokeStyle = '#5A3EED'; ctx.lineWidth = 2;
+  const ax = cx, ay = t - 2;
+  ctx.beginPath(); ctx.moveTo(ax + 10, ay - 12); ctx.lineTo(ax + 20, ay - 6); ctx.lineTo(ax + 10, ay); ctx.fill();
+  ctx.font = 'bold 12px Segoe UI'; ctx.textAlign = 'left';
+  ctx.fillText('I = ' + formatI(I), ax + 26, ay - 2);
+
+  // KVL loop arrow (clockwise)
+  ctx.strokeStyle = 'rgba(90,62,237,0.3)'; ctx.lineWidth = 1.5; ctx.setLineDash([6, 4]);
+  ctx.beginPath();
+  ctx.arc(cx, cy, 50, 0, Math.PI * 1.7);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  // arrowhead
+  const aa = Math.PI * 1.7;
+  ctx.fillStyle = 'rgba(90,62,237,0.5)';
+  ctx.beginPath();
+  ctx.moveTo(cx + 50*Math.cos(aa), cy + 50*Math.sin(aa));
+  ctx.lineTo(cx + 50*Math.cos(aa) + 8, cy + 50*Math.sin(aa) - 6);
+  ctx.lineTo(cx + 50*Math.cos(aa) - 2, cy + 50*Math.sin(aa) - 10);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(90,62,237,0.6)'; ctx.font = '11px Segoe UI'; ctx.textAlign = 'center';
+  ctx.fillText('KVL', cx, cy + 4);
+}
+
+function update() {
+  const v = getValues();
+  displays.vs.textContent = v.vs.toFixed(1) + ' V';
+  displays.r1.textContent = formatR(v.r1);
+  displays.r2.textContent = formatR(v.r2);
+  displays.r3.textContent = formatR(v.r3);
+  const rTot = v.r1 + v.r2 + v.r3;
+  const I = v.vs / rTot;
+  const vr1 = I * v.r1, vr2 = I * v.r2, vr3 = I * v.r3;
+  const kvlSum = v.vs - vr1 - vr2 - vr3;
+  document.getElementById('rTotal').textContent = formatR(rTot);
+  document.getElementById('current').textContent = formatI(I);
+  document.getElementById('vr1').textContent = vr1.toFixed(2) + ' V';
+  document.getElementById('vr2').textContent = vr2.toFixed(2) + ' V';
+  document.getElementById('vr3').textContent = vr3.toFixed(2) + ' V';
+  document.getElementById('kvlSum').textContent = '= ' + kvlSum.toFixed(4) + ' V';
+  document.getElementById('kvlStatus').textContent = '✓ KVL Verified: Vs − VR1 − VR2 − VR3 = 0';
+  document.getElementById('kvlStatus').className = 'kvl-check kvl-pass';
+  drawCircuit(v);
+}
+
+Object.values(sliders).forEach(s => s.addEventListener('input', update));
+update();
+</script>
+</body>
+</html>
