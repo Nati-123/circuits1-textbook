@@ -6,5 +6,5 @@ theme:
 nav:
   - Home: index.md
   - Chapters:
-      - Chapter Overview: chapters/index.md
+      - Chapter 1: chapters/ch1.md
       - Chapter 3: chapters/chapter3.md
