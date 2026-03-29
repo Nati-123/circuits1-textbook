@@ -62,114 +62,12 @@ Before beginning this chapter, students should have:
 
 <h2 style="color: #5A3EED !important; border-bottom: 2px solid #5A3EED; padding-bottom: 0.3rem; font-weight: 700; margin-top: 2rem;">Concept Map</h2>
 
-<p style="color: #555; line-height: 1.85; font-size: 1.02rem; margin-bottom: 1.2rem;">
-The following diagram shows how Chapter 3 concepts build upon Chapters 1–2 and relate to each other.
+<p style="color: #555; line-height: 1.85; font-size: 1.02rem; margin-bottom: 0.6rem;">
+The diagram below shows how Chapter 3 concepts build upon each other. <strong>Hover</strong> over a concept to see its connections. <strong>Click</strong> to open its MicroSim or section.
 </p>
 
-<div style="background: #EEF4FF; border: 2px solid #A8C8FF; border-radius: 12px; padding: 24px; margin: 1rem 0; box-shadow: 0 2px 8px rgba(90,61,237,0.07); overflow-x: auto;">
-<svg viewBox="0 0 780 560" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:780px;display:block;margin:0 auto;" font-family="Roboto, Segoe UI, sans-serif">
-  <defs>
-    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A3EED"/>
-    </marker>
-    <marker id="arr-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#999"/>
-    </marker>
-  </defs>
-
-  <!-- ═══ Row 0: Ch1 ═══ -->
-  <rect x="250" y="10" width="280" height="44" rx="10" fill="#F8F6FF" stroke="#5A3EED" stroke-width="2"/>
-  <text x="390" y="37" text-anchor="middle" font-size="13" fill="#333"><tspan font-weight="700">Ch 1:</tspan> Charge, Voltage, Current, Resistance</text>
-  <line x1="390" y1="54" x2="390" y2="74" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
-
-  <!-- ═══ Row 1: Ch2 ═══ -->
-  <rect x="250" y="78" width="280" height="44" rx="10" fill="#F8F6FF" stroke="#5A3EED" stroke-width="2"/>
-  <text x="390" y="105" text-anchor="middle" font-size="13" fill="#333"><tspan font-weight="700">Ch 2:</tspan> Ohm's Law, Series &amp; Parallel</text>
-  <line x1="390" y1="122" x2="390" y2="152" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
-
-  <!-- ═══ Row 2: Topology + Delta-Wye ═══ -->
-  <rect x="240" y="156" width="260" height="44" rx="10" fill="#EEF4FF" stroke="#A8C8FF" stroke-width="2"/>
-  <text x="370" y="183" text-anchor="middle" font-size="13" fill="#333"><tspan font-weight="700">Nodes &amp; Branches</tspan> — Circuit Topology</text>
-
-  <rect x="570" y="156" width="190" height="44" rx="10" fill="#FFF7DD" stroke="#F0D87A" stroke-width="2"/>
-  <text x="665" y="183" text-anchor="middle" font-size="13" fill="#333"><tspan font-weight="700">Delta-Wye</tspan> Transform</text>
-  <!-- Ch2 → Delta-Wye -->
-  <line x1="500" y1="122" x2="640" y2="152" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
-
-  <!-- Topology → KCL, Loops, KVL -->
-  <line x1="310" y1="200" x2="170" y2="240" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
-  <line x1="370" y1="200" x2="370" y2="240" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
-  <line x1="430" y1="200" x2="580" y2="240" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
-
-  <!-- ═══ Row 3: KCL, Loops, KVL ═══ -->
-  <rect x="40" y="244" width="260" height="44" rx="10" fill="#E7F7E7" stroke="#81C784" stroke-width="2"/>
-  <text x="170" y="271" text-anchor="middle" font-size="13" fill="#333"><tspan font-weight="700">KCL</tspan> — Conservation of Charge</text>
-
-  <rect x="320" y="244" width="140" height="44" rx="10" fill="#EEF4FF" stroke="#A8C8FF" stroke-width="2"/>
-  <text x="390" y="271" text-anchor="middle" font-size="13" fill="#333"><tspan font-weight="700">Loops &amp; Meshes</tspan></text>
-
-  <rect x="480" y="244" width="260" height="44" rx="10" fill="#E7F7E7" stroke="#81C784" stroke-width="2"/>
-  <text x="610" y="271" text-anchor="middle" font-size="13" fill="#333"><tspan font-weight="700">KVL</tspan> — Conservation of Energy</text>
-
-  <!-- KCL → Node Voltage (labeled) -->
-  <line x1="170" y1="288" x2="170" y2="328" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
-  <text x="140" y="313" text-anchor="end" font-size="10" fill="#999" font-style="italic">applies</text>
-
-  <!-- KVL → Mesh Current (labeled) -->
-  <line x1="610" y1="288" x2="610" y2="328" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
-  <text x="640" y="313" text-anchor="start" font-size="10" fill="#999" font-style="italic">applies</text>
-
-  <!-- KCL + KVL → Superposition (labeled) -->
-  <line x1="260" y1="288" x2="370" y2="328" stroke="#5A3EED" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arr)"/>
-  <line x1="520" y1="288" x2="410" y2="328" stroke="#5A3EED" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arr)"/>
-  <text x="390" y="318" text-anchor="middle" font-size="10" fill="#999" font-style="italic">linearity</text>
-
-  <!-- ═══ Row 4: Node Voltage, Superposition, Mesh Current ═══ -->
-  <rect x="40" y="332" width="260" height="44" rx="10" fill="#FFF7DD" stroke="#F0D87A" stroke-width="2"/>
-  <text x="170" y="359" text-anchor="middle" font-size="13" fill="#333"><tspan font-weight="700">Node Voltage Method</tspan></text>
-
-  <rect x="320" y="332" width="140" height="44" rx="10" fill="#FFF7DD" stroke="#F0D87A" stroke-width="2"/>
-  <text x="390" y="352" text-anchor="middle" font-size="12" fill="#333"><tspan font-weight="700">Superposition</tspan></text>
-  <text x="390" y="367" text-anchor="middle" font-size="10" fill="#777">(general analysis)</text>
-
-  <rect x="480" y="332" width="260" height="44" rx="10" fill="#FFF7DD" stroke="#F0D87A" stroke-width="2"/>
-  <text x="610" y="359" text-anchor="middle" font-size="13" fill="#333"><tspan font-weight="700">Mesh Current Method</tspan></text>
-
-  <!-- Node Voltage → Supernode -->
-  <line x1="120" y1="376" x2="120" y2="420" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
-  <!-- Mesh Current → Supermesh -->
-  <line x1="660" y1="376" x2="660" y2="420" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
-  <!-- Node Voltage → Matrix -->
-  <line x1="230" y1="376" x2="335" y2="420" stroke="#5A3EED" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arr)"/>
-  <!-- Mesh Current → Matrix -->
-  <line x1="550" y1="376" x2="445" y2="420" stroke="#5A3EED" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arr)"/>
-
-  <!-- ═══ Row 5: Supernode, Matrix, Supermesh ═══ -->
-  <rect x="25" y="424" width="190" height="40" rx="10" fill="#FFF7DD" stroke="#F0D87A" stroke-width="2"/>
-  <text x="120" y="448" text-anchor="middle" font-size="13" fill="#333">Supernode</text>
-
-  <rect x="260" y="424" width="260" height="40" rx="10" fill="#EEF4FF" stroke="#A8C8FF" stroke-width="2"/>
-  <text x="390" y="441" text-anchor="middle" font-size="12" fill="#333"><tspan font-weight="700">Matrix Methods</tspan></text>
-  <text x="390" y="456" text-anchor="middle" font-size="10" fill="#777">(Systematic Circuit Solving)</text>
-
-  <rect x="565" y="424" width="190" height="40" rx="10" fill="#FFF7DD" stroke="#F0D87A" stroke-width="2"/>
-  <text x="660" y="448" text-anchor="middle" font-size="13" fill="#333">Supermesh</text>
-
-  <!-- ═══ Row 6: Circuit Simplification ═══ -->
-  <rect x="235" y="500" width="310" height="48" rx="10" fill="#E7F7E7" stroke="#81C784" stroke-width="2.5"/>
-  <text x="390" y="529" text-anchor="middle" font-size="14" font-weight="700" fill="#333">Circuit Simplification</text>
-
-  <!-- Matrix → Simplification -->
-  <line x1="390" y1="464" x2="390" y2="496" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
-
-  <!-- Delta-Wye → Simplification (clear direct connection) -->
-  <line x1="665" y1="200" x2="665" y2="484" stroke="#F0D87A" stroke-width="2.5"/>
-  <line x1="665" y1="484" x2="549" y2="510" stroke="#F0D87A" stroke-width="2.5" marker-end="url(#arr)"/>
-  <text x="680" y="350" text-anchor="start" font-size="10" fill="#B8860B" font-style="italic" transform="rotate(90,680,350)">enables simplification</text>
-
-  <!-- Superposition → Simplification -->
-  <line x1="370" y1="376" x2="310" y2="496" stroke="#5A3EED" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arr)"/>
-</svg>
+<div style="background: #EEF4FF; border: 2px solid #A8C8FF; border-radius: 12px; padding: 8px; margin: 1rem 0; box-shadow: 0 2px 8px rgba(90,61,237,0.07);">
+<iframe src="../../sims/concept-map/main.html" width="100%" height="590px" scrolling="no" style="border:none; border-radius:8px; overflow:hidden;"></iframe>
 </div>
 
 <h2 style="color: #5A3EED !important; border-bottom: 2px solid #5A3EED; padding-bottom: 0.3rem; font-weight: 700; margin-top: 2rem;">Learning Dependency Graph</h2>
