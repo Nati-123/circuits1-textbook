@@ -1,10 +1,10 @@
-site_name: Circuits 1 Textbook
+site_name: Circuits 1 Interactive Textbook
 
 theme:
   name: material
 
 nav:
   - Home: index.md
-  - Chapters:
-      - Chapter 1: chapters/ch1.md
-      - Chapter 3: chapters/chapter3.md
+  - Chapter 1: chapters/ch1.md
+  - Chapter 2: chapters/ch2.md
+  - Chapter 3: chapters/ch3.md
