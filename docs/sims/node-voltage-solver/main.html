@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Node Voltage Method Solver</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Roboto', 'Segoe UI', system-ui, sans-serif;
+    background: #F7F9FC;
+    color: #1A1A2E;
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px;
+    line-height: 1.6;
+  }
+  .container { max-width: 720px; width: 100%; }
+  h1 {
+    text-align: center;
+    color: #5A3EED;
+    font-size: 1.6rem;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(90,62,237,0.08);
+  }
+  .card h2 {
+    font-size: 1.05rem;
+    color: #5A3EED;
+    margin-bottom: 14px;
+    border-bottom: 2px solid #EEF4FF;
+    padding-bottom: 6px;
+  }
+  canvas {
+    display: block;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 8px;
+  }
+  .slider-group { margin-bottom: 14px; }
+  .slider-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.88rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .slider-label .val {
+    color: #5A3EED;
+    font-weight: 700;
+    min-width: 70px;
+    text-align: right;
+  }
+  input[type="range"] {
+    width: 100%;
+    accent-color: #5A3EED;
+    height: 6px;
+    cursor: pointer;
+  }
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .result-box {
+    background: #EEF4FF;
+    border-radius: 12px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .result-box .label {
+    font-size: 0.78rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+  .result-box .value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #5A3EED;
+  }
+  .result-box .unit {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: #888;
+  }
+  .step-box {
+    background: #EEF4FF;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    font-size: 0.88rem;
+  }
+  .step-box .step-title {
+    font-weight: 700;
+    color: #5A3EED;
+    margin-bottom: 4px;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .step-box code {
+    display: block;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.86rem;
+    color: #1A1A2E;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .eq { color: #5A3EED; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Node Voltage Method Solver</h1>
+  <p class="subtitle">Interactive two-node circuit analysis</p>
+
+  <!-- Circuit Diagram -->
+  <div class="card">
+    <h2>Circuit Diagram</h2>
+    <canvas id="circuitCanvas" width="680" height="340"></canvas>
+  </div>
+
+  <!-- Controls -->
+  <div class="card">
+    <h2>Component Values</h2>
+    <div class="slider-group">
+      <div class="slider-label"><span>Vs (Voltage Source)</span><span class="val" id="vsVal">10 V</span></div>
+      <input type="range" id="vs" min="1" max="24" step="0.5" value="10">
+    </div>
+    <div class="slider-group">
+      <div class="slider-label"><span>R1</span><span class="val" id="r1Val">2000 &#8486;</span></div>
+      <input type="range" id="r1" min="100" max="10000" step="100" value="2000">
+    </div>
+    <div class="slider-group">
+      <div class="slider-label"><span>R2</span><span class="val" id="r2Val">4000 &#8486;</span></div>
+      <input type="range" id="r2" min="100" max="10000" step="100" value="4000">
+    </div>
+    <div class="slider-group">
+      <div class="slider-label"><span>R3</span><span class="val" id="r3Val">6000 &#8486;</span></div>
+      <input type="range" id="r3" min="100" max="10000" step="100" value="6000">
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="card">
+    <h2>Results</h2>
+    <div class="results-grid" id="resultsGrid"></div>
+  </div>
+
+  <!-- Step-by-step -->
+  <div class="card">
+    <h2>Step-by-Step Solution</h2>
+    <div id="steps"></div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('circuitCanvas');
+const ctx = canvas.getContext('2d');
+
+const sliders = {
+  vs: document.getElementById('vs'),
+  r1: document.getElementById('r1'),
+  r2: document.getElementById('r2'),
+  r3: document.getElementById('r3')
+};
+const valLabels = {
+  vs: document.getElementById('vsVal'),
+  r1: document.getElementById('r1Val'),
+  r2: document.getElementById('r2Val'),
+  r3: document.getElementById('r3Val')
+};
+
+function getValues() {
+  return {
+    Vs: parseFloat(sliders.vs.value),
+    R1: parseFloat(sliders.r1.value),
+    R2: parseFloat(sliders.r2.value),
+    R3: parseFloat(sliders.r3.value)
+  };
+}
+
+function fmt(n, decimals) {
+  if (Math.abs(n) < 0.001) return '0';
+  if (Math.abs(n) < 1) return (n * 1000).toFixed(decimals !== undefined ? decimals : 2) + ' m';
+  return n.toFixed(decimals !== undefined ? decimals : 3);
+}
+
+function fmtR(r) {
+  if (r >= 1000) return (r / 1000).toFixed(r % 1000 === 0 ? 0 : 1) + ' k\u03A9';
+  return r + ' \u03A9';
+}
+
+function solve() {
+  const { Vs, R1, R2, R3 } = getValues();
+  // KCL at node A: (Va - Vs)/R1 + (Va - Vb)/R2 = 0
+  // KCL at node B: (Vb - Va)/R2 + Vb/R3 = 0
+  //
+  // Rearranged:
+  // Va*(1/R1 + 1/R2) - Vb*(1/R2) = Vs/R1
+  // -Va*(1/R2) + Vb*(1/R2 + 1/R3) = 0
+  const g1 = 1/R1, g2 = 1/R2, g3 = 1/R3;
+  const a11 = g1 + g2;
+  const a12 = -g2;
+  const b1 = Vs * g1;
+  const a21 = -g2;
+  const a22 = g2 + g3;
+  const b2 = 0;
+  const det = a11 * a22 - a12 * a21;
+  const Va = (b1 * a22 - b2 * a12) / det;
+  const Vb = (a11 * b2 - a21 * b1) / det;
+  const I1 = (Vs - Va) / R1;
+  const I2 = (Va - Vb) / R2;
+  const I3 = Vb / R3;
+  return { Vs, R1, R2, R3, Va, Vb, I1, I2, I3, g1, g2, g3, a11, a12, a21, a22, b1, det };
+}
+
+function updateLabels() {
+  const v = getValues();
+  valLabels.vs.textContent = v.Vs + ' V';
+  valLabels.r1.textContent = fmtR(v.R1);
+  valLabels.r2.textContent = fmtR(v.R2);
+  valLabels.r3.textContent = fmtR(v.R3);
+}
+
+function renderResults(s) {
+  const grid = document.getElementById('resultsGrid');
+  const items = [
+    { label: 'Node A Voltage (Va)', value: s.Va.toFixed(3), unit: 'V' },
+    { label: 'Node B Voltage (Vb)', value: s.Vb.toFixed(3), unit: 'V' },
+    { label: 'Current I\u2081 (through R1)', value: fmt(s.I1), unit: 'A' },
+    { label: 'Current I\u2082 (through R2)', value: fmt(s.I2), unit: 'A' },
+    { label: 'Current I\u2083 (through R3)', value: fmt(s.I3), unit: 'A' },
+    { label: 'Power from Source', value: fmt(s.Vs * s.I1), unit: 'W' }
+  ];
+  grid.innerHTML = items.map(i =>
+    `<div class="result-box">
+      <div class="label">${i.label}</div>
+      <div class="value">${i.value} <span class="unit">${i.unit}</span></div>
+    </div>`
+  ).join('');
+}
+
+function renderSteps(s) {
+  const div = document.getElementById('steps');
+  const g1s = (1/s.R1).toExponential(3);
+  const g2s = (1/s.R2).toExponential(3);
+  const g3s = (1/s.R3).toExponential(3);
+  div.innerHTML = `
+    <div class="step-box">
+      <div class="step-title">Step 1: Identify Nodes</div>
+      <code>Node A: junction of R1 and R2
+Node B: junction of R2 and R3
+Reference (ground): bottom node</code>
+    </div>
+    <div class="step-box">
+      <div class="step-title">Step 2: Write KCL at Node A</div>
+      <code>Sum of currents leaving node A = 0
+(Va \u2212 Vs)/R1 + (Va \u2212 Vb)/R2 = 0
+
+Substitute values:
+(Va \u2212 ${s.Vs})/${s.R1} + (Va \u2212 Vb)/${s.R2} = 0
+
+Collect terms:
+<span class="eq">Va\u00B7(1/R1 + 1/R2) \u2212 Vb\u00B7(1/R2) = Vs/R1</span>
+Va\u00B7(${s.a11.toExponential(3)}) \u2212 Vb\u00B7(${Math.abs(s.a12).toExponential(3)}) = ${s.b1.toExponential(3)}</code>
+    </div>
+    <div class="step-box">
+      <div class="step-title">Step 3: Write KCL at Node B</div>
+      <code>Sum of currents leaving node B = 0
+(Vb \u2212 Va)/R2 + Vb/R3 = 0
+
+Substitute values:
+(Vb \u2212 Va)/${s.R2} + Vb/${s.R3} = 0
+
+Collect terms:
+<span class="eq">\u2212Va\u00B7(1/R2) + Vb\u00B7(1/R2 + 1/R3) = 0</span>
+\u2212Va\u00B7(${Math.abs(s.a21).toExponential(3)}) + Vb\u00B7(${s.a22.toExponential(3)}) = 0</code>
+    </div>
+    <div class="step-box">
+      <div class="step-title">Step 4: Solve the 2\u00D72 System (Cramer's Rule)</div>
+      <code>| ${s.a11.toExponential(3)}   ${s.a12.toExponential(3)} | |Va|   | ${s.b1.toExponential(3)} |
+| ${s.a21.toExponential(3)}    ${s.a22.toExponential(3)} | |Vb| = | 0            |
+
+det = ${s.det.toExponential(4)}
+
+<span class="eq">Va = ${s.Va.toFixed(4)} V</span>
+<span class="eq">Vb = ${s.Vb.toFixed(4)} V</span></code>
+    </div>
+    <div class="step-box">
+      <div class="step-title">Step 5: Compute Branch Currents</div>
+      <code>I\u2081 = (Vs \u2212 Va)/R1 = (${s.Vs} \u2212 ${s.Va.toFixed(4)})/${s.R1}
+   <span class="eq">= ${fmt(s.I1)}A</span>
+
+I\u2082 = (Va \u2212 Vb)/R2 = (${s.Va.toFixed(4)} \u2212 ${s.Vb.toFixed(4)})/${s.R2}
+   <span class="eq">= ${fmt(s.I2)}A</span>
+
+I\u2083 = Vb/R3 = ${s.Vb.toFixed(4)}/${s.R3}
+   <span class="eq">= ${fmt(s.I3)}A</span></code>
+    </div>
+    <div class="step-box">
+      <div class="step-title">Step 6: Verify KCL</div>
+      <code>At node A: I\u2081 = I\u2082  \u2192  ${fmt(s.I1)}A = ${fmt(s.I2)}A  \u2713
+At node B: I\u2082 = I\u2083  \u2192  ${fmt(s.I2)}A = ${fmt(s.I3)}A  \u2713
+(Currents balance at every node)</code>
+    </div>`;
+}
+
+/* ---- Circuit Drawing ---- */
+function drawCircuit(s) {
+  const W = canvas.width, H = canvas.height;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = 680 * dpr;
+  canvas.height = 340 * dpr;
+  canvas.style.width = '680px';
+  canvas.style.height = '340px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, 680, 340);
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = '#333';
+  ctx.fillStyle = '#333';
+  ctx.font = '600 13px Roboto, Segoe UI, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // Key coordinates
+  const gndY = 280, topY = 60;
+  const srcX = 100, nA = 300, nB = 480, gndMidX = 480;
+  const midR1 = (srcX + nA) / 2;
+  const midR2 = (nA + nB) / 2;
+
+  // Draw wires
+  ctx.beginPath();
+  // Top wire: source top to node A
+  ctx.moveTo(srcX, topY); ctx.lineTo(nA, topY);
+  // Node A to node B
+  ctx.moveTo(nA, topY); ctx.lineTo(nB, topY);
+  // Source bottom to ground line
+  ctx.moveTo(srcX, gndY); ctx.lineTo(nB, gndY);
+  // Node B down to ground wire
+  ctx.moveTo(nB, topY); ctx.lineTo(nB, topY + 30);
+  // Node B R3 bottom to gnd
+  ctx.moveTo(nB, gndY - 30); ctx.lineTo(nB, gndY);
+  // Source vertical wires
+  ctx.moveTo(srcX, topY); ctx.lineTo(srcX, topY + 50);
+  ctx.moveTo(srcX, gndY - 50); ctx.lineTo(srcX, gndY);
+  ctx.stroke();
+
+  // -- Voltage source --
+  drawVoltageSource(srcX, topY + 50, srcX, gndY - 50, s.Vs);
+
+  // -- R1 --
+  drawResistor(srcX + 40, topY, nA - 40, topY, 'R1', fmtR(s.R1));
+
+  // -- R2 --
+  drawResistor(nA + 40, topY, nB - 40, topY, 'R2', fmtR(s.R2));
+
+  // -- R3 (vertical) --
+  drawResistorV(nB, topY + 30, nB, gndY - 30, 'R3', fmtR(s.R3));
+
+  // -- Ground symbol --
+  drawGround(nB, gndY);
+
+  // -- Node labels --
+  ctx.fillStyle = '#5A3EED';
+  ctx.font = '700 14px Roboto, Segoe UI, sans-serif';
+  drawNodeDot(nA, topY, 'A');
+  drawNodeDot(nB, topY, 'B');
+
+  // -- Voltage annotations --
+  ctx.font = '600 12px Roboto, Segoe UI, sans-serif';
+  ctx.fillStyle = '#D63384';
+  ctx.textAlign = 'left';
+  ctx.fillText('Va = ' + s.Va.toFixed(2) + ' V', nA + 4, topY - 18);
+  ctx.fillText('Vb = ' + s.Vb.toFixed(2) + ' V', nB + 4, topY - 18);
+
+  // -- Current arrows --
+  ctx.fillStyle = '#0D6EFD';
+  ctx.font = '600 11px Roboto, Segoe UI, sans-serif';
+  drawCurrentArrow(midR1, topY + 16, 1, 'I\u2081=' + fmt(s.I1, 2) + 'A');
+  drawCurrentArrow(midR2, topY + 16, 1, 'I\u2082=' + fmt(s.I2, 2) + 'A');
+  drawCurrentArrowV(nB + 20, (topY + 30 + gndY - 30) / 2, 1, 'I\u2083=' + fmt(s.I3, 2) + 'A');
+}
+
+function drawNodeDot(x, y, label) {
+  ctx.beginPath();
+  ctx.arc(x, y, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillText(label, x, y - 14);
+}
+
+function drawResistor(x1, y1, x2, y2, name, value) {
+  const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+  const rw = 60, rh = 16;
+  // Wires to resistor
+  ctx.beginPath();
+  ctx.moveTo(x1, y1); ctx.lineTo(mx - rw / 2, my);
+  ctx.moveTo(mx + rw / 2, my); ctx.lineTo(x2, y2);
+  ctx.stroke();
+  // Zigzag
+  ctx.beginPath();
+  const segs = 6, segW = rw / segs;
+  let cx = mx - rw / 2;
+  ctx.moveTo(cx, my);
+  for (let i = 0; i < segs; i++) {
+    const peak = (i % 2 === 0) ? my - rh : my + rh;
+    cx += segW;
+    ctx.lineTo(cx, peak);
+  }
+  // end
+  ctx.lineTo(mx + rw / 2, my);
+  ctx.stroke();
+  // Label
+  ctx.fillStyle = '#333';
+  ctx.font = '700 12px Roboto, Segoe UI, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(name, mx, my - rh - 8);
+  ctx.font = '400 11px Roboto, Segoe UI, sans-serif';
+  ctx.fillText(value, mx, my + rh + 12);
+}
+
+function drawResistorV(x1, y1, x2, y2, name, value) {
+  const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+  const rh = 50, rw = 14;
+  // Wires
+  ctx.beginPath();
+  ctx.moveTo(x1, y1); ctx.lineTo(mx, my - rh / 2);
+  ctx.moveTo(mx, my + rh / 2); ctx.lineTo(x2, y2);
+  ctx.stroke();
+  // Zigzag vertical
+  ctx.beginPath();
+  const segs = 6, segH = rh / segs;
+  let cy = my - rh / 2;
+  ctx.moveTo(mx, cy);
+  for (let i = 0; i < segs; i++) {
+    const peak = (i % 2 === 0) ? mx - rw : mx + rw;
+    cy += segH;
+    ctx.lineTo(peak, cy);
+  }
+  ctx.lineTo(mx, my + rh / 2);
+  ctx.stroke();
+  // Label
+  ctx.fillStyle = '#333';
+  ctx.font = '700 12px Roboto, Segoe UI, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(name, mx - 44, my - 4);
+  ctx.font = '400 11px Roboto, Segoe UI, sans-serif';
+  ctx.fillText(value, mx - 44, my + 12);
+}
+
+function drawVoltageSource(x1, y1, x2, y2) {
+  const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+  const r = 22;
+  ctx.beginPath();
+  ctx.arc(mx, my, r, 0, Math.PI * 2);
+  ctx.stroke();
+  // + and -
+  ctx.font = '700 16px Roboto, Segoe UI, sans-serif';
+  ctx.fillStyle = '#333';
+  ctx.textAlign = 'center';
+  ctx.fillText('+', mx, my - 8);
+  ctx.fillText('\u2212', mx, my + 12);
+  // Label
+  ctx.font = '600 12px Roboto, Segoe UI, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Vs', mx + r + 6, my);
+}
+
+function drawGround(x, y) {
+  ctx.beginPath();
+  ctx.moveTo(x - 16, y); ctx.lineTo(x + 16, y);
+  ctx.moveTo(x - 10, y + 6); ctx.lineTo(x + 10, y + 6);
+  ctx.moveTo(x - 4, y + 12); ctx.lineTo(x + 4, y + 12);
+  ctx.stroke();
+}
+
+function drawCurrentArrow(x, y, dir, label) {
+  ctx.fillStyle = '#0D6EFD';
+  ctx.textAlign = 'center';
+  ctx.fillText(label, x, y + 12);
+  // small arrow
+  ctx.beginPath();
+  ctx.moveTo(x + dir * 8, y);
+  ctx.lineTo(x - dir * 4, y - 4);
+  ctx.lineTo(x - dir * 4, y + 4);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawCurrentArrowV(x, y, dir, label) {
+  ctx.fillStyle = '#0D6EFD';
+  ctx.textAlign = 'left';
+  ctx.fillText(label, x + 6, y);
+  // small arrow pointing down
+  ctx.beginPath();
+  ctx.moveTo(x, y + dir * 8);
+  ctx.lineTo(x - 4, y - dir * 4);
+  ctx.lineTo(x + 4, y - dir * 4);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function update() {
+  updateLabels();
+  const s = solve();
+  renderResults(s);
+  renderSteps(s);
+  drawCircuit(s);
+}
+
+Object.values(sliders).forEach(sl => sl.addEventListener('input', update));
+update();
+</script>
+</body>
+</html>

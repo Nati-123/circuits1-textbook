@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Superposition Principle Demonstrator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    background: #f4f2fb;
+    color: #222;
+    padding: 24px 12px;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 {
+    text-align: center;
+    color: #5A3EED;
+    font-size: 1.55rem;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #666;
+    font-size: 0.92rem;
+    margin-bottom: 20px;
+  }
+  /* Sliders */
+  .controls {
+    background: #fff;
+    border-radius: 12px;
+    padding: 18px 20px 14px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(90,62,237,.1);
+  }
+  .controls h2 { font-size: 1rem; color: #5A3EED; margin-bottom: 10px; }
+  .slider-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 20px;
+  }
+  @media (max-width: 500px) { .slider-grid { grid-template-columns: 1fr; } }
+  .slider-row { display: flex; align-items: center; gap: 6px; }
+  .slider-row label { min-width: 62px; font-size: 0.88rem; font-weight: 600; }
+  .slider-row input[type=range] { flex: 1; accent-color: #5A3EED; }
+  .slider-row .val { min-width: 52px; text-align: right; font-size: 0.86rem; font-variant-numeric: tabular-nums; }
+
+  /* Panels */
+  .panels { display: flex; flex-direction: column; gap: 16px; }
+  .panel {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px 18px;
+    box-shadow: 0 2px 8px rgba(90,62,237,.08);
+    border-left: 4px solid #5A3EED;
+  }
+  .panel.combined { border-left-color: #e84393; background: #fdf6ff; }
+  .panel h3 { font-size: 1rem; color: #5A3EED; margin-bottom: 10px; }
+  .panel.combined h3 { color: #e84393; }
+  .panel canvas { display: block; margin: 0 auto 10px; }
+  .calc {
+    background: #f8f7fd;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.86rem;
+    line-height: 1.7;
+    overflow-x: auto;
+  }
+  .panel.combined .calc { background: #fdf0fa; }
+  .calc .eq { font-family: 'Courier New', monospace; }
+  .result { font-weight: 700; color: #5A3EED; }
+  .panel.combined .result { color: #e84393; }
+  .highlight-box {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, #5A3EED15, #e8439315);
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Superposition Principle Demonstrator</h1>
+  <p class="subtitle">Analyze the current through R2 by activating one source at a time, then sum the contributions.</p>
+
+  <!-- Controls -->
+  <div class="controls">
+    <h2>Circuit Parameters</h2>
+    <div class="slider-grid">
+      <div class="slider-row">
+        <label>V1</label>
+        <input type="range" id="sV1" min="1" max="20" step="0.5" value="12">
+        <span class="val" id="vV1">12 V</span>
+      </div>
+      <div class="slider-row">
+        <label>I1</label>
+        <input type="range" id="sI1" min="0.5" max="5" step="0.1" value="2">
+        <span class="val" id="vI1">2 A</span>
+      </div>
+      <div class="slider-row">
+        <label>R1</label>
+        <input type="range" id="sR1" min="1" max="10" step="0.5" value="3">
+        <span class="val" id="vR1">3 &#8486;</span>
+      </div>
+      <div class="slider-row">
+        <label>R2</label>
+        <input type="range" id="sR2" min="1" max="10" step="0.5" value="6">
+        <span class="val" id="vR2">6 &#8486;</span>
+      </div>
+      <div class="slider-row">
+        <label>R3</label>
+        <input type="range" id="sR3" min="1" max="10" step="0.5" value="3">
+        <span class="val" id="vR3">3 &#8486;</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Three panels -->
+  <div class="panels">
+    <div class="panel" id="panelV1">
+      <h3>Step 1: V1 Only (I1 &rarr; Open Circuit)</h3>
+      <canvas id="cvV1" width="680" height="230"></canvas>
+      <div class="calc" id="calcV1"></div>
+    </div>
+    <div class="panel" id="panelI1">
+      <h3>Step 2: I1 Only (V1 &rarr; Short Circuit)</h3>
+      <canvas id="cvI1" width="680" height="230"></canvas>
+      <div class="calc" id="calcI1"></div>
+    </div>
+    <div class="panel combined" id="panelC">
+      <h3>Step 3: Combined &mdash; Superposition Result</h3>
+      <canvas id="cvC" width="680" height="230"></canvas>
+      <div class="calc" id="calcC"></div>
+      <div class="highlight-box" id="hlBox"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- helpers ----
+const $ = id => document.getElementById(id);
+const num = id => parseFloat($(id).value);
+const fmt = (v, d=4) => {
+  const s = v.toFixed(d);
+  return s.replace(/\.?0+$/, '') || '0';
+};
+
+// ---- slider wiring ----
+const sliders = [
+  { s:'sV1', v:'vV1', u:' V' },
+  { s:'sI1', v:'vI1', u:' A' },
+  { s:'sR1', v:'vR1', u:' \u03A9' },
+  { s:'sR2', v:'vR2', u:' \u03A9' },
+  { s:'sR3', v:'vR3', u:' \u03A9' },
+];
+sliders.forEach(o => {
+  $(o.s).addEventListener('input', () => { $(o.v).textContent = $(o.s).value + o.u; update(); });
+});
+
+// ---- drawing helpers ----
+function line(ctx,x1,y1,x2,y2){ ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); }
+
+function arrow(ctx,x1,y1,x2,y2,clr){
+  const dx=x2-x1, dy=y2-y1, len=Math.hypot(dx,dy);
+  const ux=dx/len, uy=dy/len;
+  ctx.save(); ctx.strokeStyle=clr; ctx.fillStyle=clr; ctx.lineWidth=2;
+  line(ctx,x1,y1,x2,y2);
+  const hs=8;
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2 - hs*ux + hs*0.4*uy, y2 - hs*uy - hs*0.4*ux);
+  ctx.lineTo(x2 - hs*ux - hs*0.4*uy, y2 - hs*uy + hs*0.4*ux);
+  ctx.fill();
+  ctx.restore();
+}
+
+function resistor(ctx,x1,y1,x2,y2,label){
+  const dx=x2-x1, dy=y2-y1, len=Math.hypot(dx,dy);
+  const ux=dx/len, uy=dy/len;
+  const px=-uy, py=ux;
+  const pad=18, zl=len-2*pad, n=6, seg=zl/n;
+  ctx.save(); ctx.lineWidth=2;
+  // lead in
+  line(ctx, x1, y1, x1+pad*ux, y1+pad*uy);
+  // zigzag
+  let cx=x1+pad*ux, cy=y1+pad*uy;
+  ctx.beginPath(); ctx.moveTo(cx,cy);
+  for(let i=0;i<n;i++){
+    const side = (i%2===0)?6:-6;
+    cx += seg*ux; cy += seg*uy;
+    ctx.lineTo(cx+side*px, cy+side*py);
+  }
+  ctx.lineTo(x2-pad*ux, y2-pad*uy);
+  ctx.stroke();
+  // lead out
+  line(ctx, x2-pad*ux, y2-pad*uy, x2, y2);
+  // label
+  const mx=(x1+x2)/2, my=(y1+y2)/2;
+  ctx.fillStyle='#333'; ctx.font='bold 13px Segoe UI, Roboto, sans-serif'; ctx.textAlign='center';
+  ctx.fillText(label, mx+14*px, my+14*py);
+  ctx.restore();
+}
+
+function voltSrc(ctx,cx,cy,label,active){
+  ctx.save();
+  if(!active){ ctx.setLineDash([4,4]); ctx.globalAlpha=0.35; }
+  ctx.lineWidth=2; ctx.strokeStyle='#5A3EED';
+  ctx.beginPath(); ctx.arc(cx,cy,16,0,Math.PI*2); ctx.stroke();
+  ctx.font='bold 12px Segoe UI, Roboto, sans-serif'; ctx.fillStyle='#5A3EED'; ctx.textAlign='center';
+  ctx.fillText('+', cx, cy-4); ctx.fillText('\u2013', cx, cy+11);
+  ctx.font='11px Segoe UI, Roboto, sans-serif'; ctx.fillStyle='#555';
+  ctx.fillText(label, cx, cy+32);
+  ctx.setLineDash([]); ctx.globalAlpha=1; ctx.restore();
+}
+
+function curSrc(ctx,cx,cy,label,active){
+  ctx.save();
+  if(!active){ ctx.setLineDash([4,4]); ctx.globalAlpha=0.35; }
+  ctx.lineWidth=2; ctx.strokeStyle='#e84393';
+  ctx.beginPath(); ctx.arc(cx,cy,16,0,Math.PI*2); ctx.stroke();
+  // arrow inside pointing up
+  arrow(ctx, cx, cy+8, cx, cy-8, '#e84393');
+  ctx.font='11px Segoe UI, Roboto, sans-serif'; ctx.fillStyle='#555'; ctx.textAlign='center';
+  ctx.fillText(label, cx, cy+32);
+  ctx.setLineDash([]); ctx.globalAlpha=1; ctx.restore();
+}
+
+function shortLabel(ctx,cx,cy){
+  ctx.save(); ctx.font='bold 11px Segoe UI, Roboto, sans-serif'; ctx.fillStyle='#d63031'; ctx.textAlign='center';
+  ctx.fillText('short', cx, cy+30);
+  ctx.restore();
+}
+
+function openLabel(ctx,cx,cy){
+  ctx.save(); ctx.font='bold 11px Segoe UI, Roboto, sans-serif'; ctx.fillStyle='#d63031'; ctx.textAlign='center';
+  ctx.fillText('open', cx, cy+30);
+  ctx.restore();
+}
+
+function nodeLabel(ctx,x,y,t){
+  ctx.save(); ctx.fillStyle='#999'; ctx.font='11px Segoe UI, Roboto, sans-serif'; ctx.textAlign='center';
+  ctx.fillText(t,x,y); ctx.restore();
+}
+
+function currentArrow(ctx,x1,y1,x2,y2,label,clr){
+  ctx.save();
+  const mx=(x1+x2)/2, my=(y1+y2)/2;
+  const dx=x2-x1, dy=y2-y1, len=Math.hypot(dx,dy);
+  const px=-dy/len, py=dx/len;
+  arrow(ctx,x1,y1,x2,y2,clr);
+  ctx.font='bold 12px Segoe UI, Roboto, sans-serif'; ctx.fillStyle=clr; ctx.textAlign='center';
+  ctx.fillText(label, mx+16*px, my+16*py);
+  ctx.restore();
+}
+
+// ---- Circuit topology ----
+// Nodes: A (top-left), B (top-mid), C (top-right)
+//        D (bottom, shared ground)
+//
+// Full circuit:
+//   A---R1---B---R3---C
+//   |        |        |
+//   V1       R2       I1
+//   |        |        |
+//   D--------D--------D  (ground rail)
+//
+// V1 between A and D (+ at A)
+// I1 between D and C (arrow up, current into C)
+// R1: A-B   R2: B-D   R3: B-C
+
+function drawCircuit(canvasId, mode){
+  const cv = $(canvasId);
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = W * dpr; cv.height = H * dpr;
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#333'; ctx.lineWidth=2;
+
+  const V1 = num('sV1'), I1 = num('sI1'), R1=num('sR1'), R2=num('sR2'), R3=num('sR3');
+
+  // positions
+  const ax=90, bx=340, cx2=590;
+  const ty=50, by=190;
+  const midy = (ty+by)/2;
+
+  // top rail
+  line(ctx, ax, ty, bx, ty);  // will draw R1 over this
+  line(ctx, bx, ty, cx2, ty); // will draw R3 over this
+
+  // bottom rail
+  line(ctx, ax, by, cx2, by);
+
+  // vertical wires
+  // left: A down to V1, V1 down to D
+  line(ctx, ax, ty, ax, midy-16);
+  line(ctx, ax, midy+16, ax, by);
+
+  // middle: B down to R2 handled by resistor
+  // R2 vertical
+  // right: C down to I1, I1 down to D
+  line(ctx, cx2, ty, cx2, midy-16);
+  line(ctx, cx2, midy+16, cx2, by);
+
+  // resistors
+  resistor(ctx, ax, ty, bx, ty, 'R1 = '+R1+' \u03A9');
+  resistor(ctx, bx, ty, bx, by, 'R2 = '+R2+' \u03A9');
+  resistor(ctx, bx, ty, cx2, ty, 'R3 = '+R3+' \u03A9');
+
+  // node dots
+  [ax,bx,cx2].forEach(x => { [ty,by].forEach(y => {
+    ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fillStyle='#333'; ctx.fill();
+  });});
+
+  nodeLabel(ctx, ax, ty-10, 'A');
+  nodeLabel(ctx, bx, ty-10, 'B');
+  nodeLabel(ctx, cx2, ty-10, 'C');
+  nodeLabel(ctx, bx, by+14, 'D (ref)');
+
+  // sources
+  if(mode==='v1only'){
+    voltSrc(ctx, ax, midy, 'V1 = '+V1+' V', true);
+    openLabel(ctx, cx2, midy-6);
+    // draw open gap
+    ctx.save(); ctx.strokeStyle='#d63031'; ctx.lineWidth=2;
+    line(ctx, cx2-6, midy-5, cx2+6, midy-5);
+    line(ctx, cx2-6, midy+5, cx2+6, midy+5);
+    ctx.restore();
+  } else if(mode==='i1only'){
+    shortLabel(ctx, ax, midy-6);
+    // draw short wire
+    ctx.save(); ctx.strokeStyle='#d63031'; ctx.lineWidth=3;
+    line(ctx, ax, midy-16, ax, midy+16);
+    ctx.restore();
+    curSrc(ctx, cx2, midy, 'I1 = '+I1+' A', true);
+  } else { // combined
+    voltSrc(ctx, ax, midy, 'V1 = '+V1+' V', true);
+    curSrc(ctx, cx2, midy, 'I1 = '+I1+' A', true);
+  }
+
+  // current arrow through R2
+  let iR2;
+  if(mode==='v1only'){
+    // I1 open: simple series-parallel. R2 and R3 in series, that combination in parallel...
+    // Actually with I1 open, no current through R3 branch at C since it's open.
+    // So circuit is V1 driving R1 in series with R2.
+    iR2 = V1 / (R1 + R2);
+  } else if(mode==='i1only'){
+    // V1 short: current divider. I1 feeds into node C.
+    // From C: R3 goes to B, from B: R1 (shorted V1 to ground) and R2 to ground in parallel.
+    // R_parallel = R1*R2/(R1+R2), total from C: R3 + R1//R2
+    // Current through R2: current divider at B
+    const Rpar = R1*R2/(R1+R2);
+    const Itotal = I1; // all of I1 goes through R3 to B (series path)
+    // At node B: divides between R1 and R2
+    iR2 = I1 * R1 / (R1 + R2);
+  } else {
+    iR2 = V1/(R1+R2) + I1*R1/(R1+R2);
+  }
+
+  const arrowClr = mode==='combined' ? '#e84393' : '#5A3EED';
+  // Arrow beside R2 (right side)
+  currentArrow(ctx, bx+20, ty+40, bx+20, by-40, 'I_R2 = '+fmt(iR2,3)+' A', arrowClr);
+
+  return iR2;
+}
+
+// ---- update ----
+function update(){
+  const V1=num('sV1'), I1=num('sI1'), R1=num('sR1'), R2=num('sR2'), R3=num('sR3');
+
+  // Step 1: V1 only
+  const i1 = drawCircuit('cvV1', 'v1only');
+  $('calcV1').innerHTML =
+    'With I1 replaced by an <b>open circuit</b>, no current flows through R3.<br>' +
+    'R1 and R2 are in series with V1.<br><br>' +
+    '<span class="eq">I\'<sub>R2</sub> = V1 / (R1 + R2) = ' + V1 + ' / (' + R1 + ' + ' + R2 + ') = ' + V1 + ' / ' + fmt(R1+R2) + '</span><br>' +
+    '<span class="result">I\'<sub>R2</sub> = ' + fmt(i1,4) + ' A</span>';
+
+  // Step 2: I1 only
+  const i2 = drawCircuit('cvI1', 'i1only');
+  $('calcI1').innerHTML =
+    'With V1 replaced by a <b>short circuit</b>, I1 feeds current into node C.<br>' +
+    'Current flows through R3 to node B, then divides between R1 and R2 (both to ground).<br><br>' +
+    '<span class="eq">At node B, current divider:  I\'\'<sub>R2</sub> = I1 &times; R1 / (R1 + R2)</span><br>' +
+    '<span class="eq">I\'\'<sub>R2</sub> = ' + I1 + ' &times; ' + R1 + ' / (' + R1 + ' + ' + R2 + ') = ' + fmt(I1*R1) + ' / ' + fmt(R1+R2) + '</span><br>' +
+    '<span class="result">I\'\'<sub>R2</sub> = ' + fmt(i2,4) + ' A</span>';
+
+  // Step 3: Combined
+  const iTotal = i1 + i2;
+  drawCircuit('cvC', 'combined');
+  $('calcC').innerHTML =
+    'By the <b>Superposition Principle</b>, the total current through R2 is the sum of individual contributions:<br><br>' +
+    '<span class="eq">I<sub>R2</sub> = I\'<sub>R2</sub> + I\'\'<sub>R2</sub> = ' + fmt(i1,4) + ' + ' + fmt(i2,4) + '</span><br>' +
+    '<span class="result">I<sub>R2</sub> = ' + fmt(iTotal,4) + ' A</span>';
+
+  $('hlBox').innerHTML =
+    fmt(i1,4) + ' A  +  ' + fmt(i2,4) + ' A  =  ' + fmt(iTotal,4) + ' A &nbsp; &#10003;';
+}
+
+update();
+</script>
+</body>
+</html>

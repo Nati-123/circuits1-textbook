@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Circuit Topology Explorer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    background: #f5f7fb;
+    color: #1a1a2e;
+    display: flex;
+    justify-content: center;
+    padding: 24px 12px;
+    min-height: 100vh;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 720px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 1.6rem;
+    color: #5A3EED;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    text-align: center;
+    font-size: 0.95rem;
+    color: #666;
+    margin-bottom: 20px;
+  }
+
+  /* Circuit selector buttons */
+  .selector {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .selector button {
+    padding: 9px 20px;
+    border: 2px solid #5A3EED;
+    border-radius: 24px;
+    background: #fff;
+    color: #5A3EED;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .selector button:hover {
+    background: #ede8ff;
+  }
+
+  .selector button.active {
+    background: #5A3EED;
+    color: #fff;
+  }
+
+  /* Canvas card */
+  .canvas-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 12px rgba(90,62,237,0.08);
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .canvas-card h2 {
+    font-size: 1.1rem;
+    color: #333;
+    margin-bottom: 4px;
+  }
+
+  .canvas-card .desc {
+    font-size: 0.85rem;
+    color: #777;
+    margin-bottom: 12px;
+  }
+
+  canvas {
+    display: block;
+    margin: 0 auto;
+    border: 1px solid #dde3f0;
+    border-radius: 8px;
+    background: #fafcff;
+  }
+
+  /* Count button */
+  .count-btn {
+    display: block;
+    margin: 16px auto 0;
+    padding: 10px 32px;
+    border: none;
+    border-radius: 24px;
+    background: #5A3EED;
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .count-btn:hover {
+    background: #4830c9;
+  }
+
+  /* Results panel */
+  .results {
+    background: #EEF4FF;
+    border-radius: 12px;
+    padding: 20px 24px;
+    box-shadow: 0 2px 8px rgba(90,62,237,0.06);
+    display: none;
+  }
+
+  .results.show { display: block; }
+
+  .results h3 {
+    font-size: 1rem;
+    color: #5A3EED;
+    margin-bottom: 12px;
+  }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .metric-box {
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+
+  .metric-box .label {
+    font-size: 0.78rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .metric-box .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #5A3EED;
+  }
+
+  .formula-check {
+    background: #fff;
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .formula-check .eq {
+    font-weight: 600;
+    color: #333;
+  }
+
+  .formula-check .pass {
+    color: #16a34a;
+    font-weight: 700;
+  }
+
+  .legend {
+    margin-top: 12px;
+    font-size: 0.82rem;
+    color: #666;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .legend span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .legend .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .legend .line-swatch {
+    width: 18px;
+    height: 3px;
+    border-radius: 2px;
+    display: inline-block;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Circuit Topology Explorer</h1>
+  <p class="subtitle">Explore nodes, branches, loops, and meshes in common circuit topologies</p>
+
+  <div class="selector">
+    <button class="active" onclick="selectCircuit(0)">Simple Loop</button>
+    <button onclick="selectCircuit(1)">Parallel</button>
+    <button onclick="selectCircuit(2)">Bridge (Wheatstone)</button>
+  </div>
+
+  <div class="canvas-card">
+    <h2 id="circuitTitle">Simple Loop Circuit</h2>
+    <p class="desc" id="circuitDesc">A single closed path with components in series.</p>
+    <canvas id="cv" width="680" height="340"></canvas>
+    <button class="count-btn" id="countBtn" onclick="revealCount()">Count Topology Elements</button>
+  </div>
+
+  <div class="results" id="results">
+    <h3>Topology Results</h3>
+    <div class="metrics">
+      <div class="metric-box"><div class="label">Nodes (n)</div><div class="value" id="mNodes">-</div></div>
+      <div class="metric-box"><div class="label">Branches (b)</div><div class="value" id="mBranches">-</div></div>
+      <div class="metric-box"><div class="label">Loops (l)</div><div class="value" id="mLoops">-</div></div>
+      <div class="metric-box"><div class="label">Meshes (m)</div><div class="value" id="mMeshes">-</div></div>
+    </div>
+    <div class="formula-check" id="formulaBox"></div>
+    <div class="legend">
+      <span><span class="dot" style="background:#e74c3c;"></span> Nodes</span>
+      <span><span class="line-swatch" style="background:#5A3EED;"></span> Branches (highlighted)</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// roundRect polyfill for older browsers
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    if (typeof r === 'number') r = [r, r, r, r];
+    const [tl, tr, br, bl] = r;
+    this.moveTo(x + tl, y);
+    this.lineTo(x + w - tr, y);
+    this.arcTo(x + w, y, x + w, y + tr, tr);
+    this.lineTo(x + w, y + h - br);
+    this.arcTo(x + w, y + h, x + w - br, y + h, br);
+    this.lineTo(x + bl, y + h);
+    this.arcTo(x, y + h, x, y + h - bl, bl);
+    this.lineTo(x, y + tl);
+    this.arcTo(x, y, x + tl, y, tl);
+    this.closePath();
+    return this;
+  };
+}
+
+const canvas = document.getElementById('cv');
+const ctx = canvas.getContext('2d');
+
+// ── Circuit definitions ──────────────────────────────────────
+const circuits = [
+  {
+    name: 'Simple Loop Circuit',
+    desc: 'A single closed path with components in series.',
+    nodes: [
+      {x:160, y:80},  // 0 top-left
+      {x:520, y:80},  // 1 top-right
+      {x:520, y:260}, // 2 bottom-right
+      {x:160, y:260}  // 3 bottom-left
+    ],
+    // each branch: [fromNode, toNode, component label]
+    branches: [
+      [0, 1, 'R1'],
+      [1, 2, 'R2'],
+      [2, 3, 'R3'],
+      [3, 0, 'Vs']
+    ],
+    n: 4, b: 4, l: 1, m: 1
+  },
+  {
+    name: 'Parallel Circuit',
+    desc: 'Two nodes connected by three parallel branches.',
+    nodes: [
+      {x:160, y:170}, // 0 left
+      {x:520, y:170}  // 1 right
+    ],
+    branches: [
+      [0, 1, 'R1', {cx:340, cy:70}],   // top path
+      [0, 1, 'Vs', {cx:340, cy:170}],   // middle path
+      [0, 1, 'R2', {cx:340, cy:270}]    // bottom path
+    ],
+    n: 2, b: 3, l: 2, m: 2
+  },
+  {
+    name: 'Bridge (Wheatstone) Circuit',
+    desc: 'A classic bridge circuit with five resistors and a source.',
+    nodes: [
+      {x:340, y:40},  // 0 top
+      {x:160, y:150}, // 1 left
+      {x:520, y:150}, // 2 right
+      {x:340, y:260}, // 3 bottom
+    ],
+    branches: [
+      [0, 1, 'R1'],
+      [0, 2, 'R2'],
+      [1, 2, 'R5'],
+      [1, 3, 'R3'],
+      [2, 3, 'R4'],
+      [3, 0, 'Vs', {cx:570, cy:150}]
+    ],
+    n: 4, b: 6, l: 3, m: 3
+  }
+];
+
+let currentIdx = 0;
+let revealed = false;
+
+// ── Drawing helpers ──────────────────────────────────────────
+function clearCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function drawComponent(x, y, label) {
+  // small zigzag or box for component
+  const isSource = label.startsWith('V');
+  const w = 36, h = 18;
+  ctx.save();
+  if (isSource) {
+    ctx.beginPath();
+    ctx.arc(x, y, 14, 0, Math.PI * 2);
+    ctx.strokeStyle = '#e67e22';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = '#e67e22';
+    ctx.font = '600 11px Segoe UI, Roboto, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('+', x - 4, y);
+    ctx.fillText('-', x + 5, y);
+  } else {
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = '#5A3EED';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(x - w/2, y - h/2, w, h, 4);
+    ctx.fill();
+    ctx.stroke();
+  }
+  // label
+  ctx.fillStyle = '#333';
+  ctx.font = '600 12px Segoe UI, Roboto, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(label, x, y - (isSource ? 18 : 14));
+  ctx.restore();
+}
+
+function midpoint(a, b) {
+  return {x: (a.x + b.x) / 2, y: (a.y + b.y) / 2};
+}
+
+function drawBranch(c, br, highlight) {
+  const n0 = c.nodes[br[0]];
+  const n1 = c.nodes[br[1]];
+  const label = br[2];
+  const curvePoint = br[3]; // optional curve-through point
+
+  ctx.save();
+  ctx.strokeStyle = highlight ? '#5A3EED' : '#aab4cc';
+  ctx.lineWidth = highlight ? 3 : 2;
+  ctx.beginPath();
+
+  if (curvePoint) {
+    // Draw curved path through control point
+    const cp = curvePoint;
+    ctx.moveTo(n0.x, n0.y);
+    ctx.quadraticCurveTo(cp.cx, cp.cy, n1.x, n1.y);
+    ctx.stroke();
+    // Component at the curve midpoint
+    const t = 0.5;
+    const mx = (1-t)*(1-t)*n0.x + 2*(1-t)*t*cp.cx + t*t*n1.x;
+    const my = (1-t)*(1-t)*n0.y + 2*(1-t)*t*cp.cy + t*t*n1.y;
+    drawComponent(mx, my, label);
+  } else {
+    ctx.moveTo(n0.x, n0.y);
+    ctx.lineTo(n1.x, n1.y);
+    ctx.stroke();
+    const mid = midpoint(n0, n1);
+    drawComponent(mid.x, mid.y, label);
+  }
+  ctx.restore();
+}
+
+function drawNode(node, idx, highlight) {
+  ctx.save();
+  const r = highlight ? 10 : 6;
+  ctx.beginPath();
+  ctx.arc(node.x, node.y, r, 0, Math.PI * 2);
+  ctx.fillStyle = highlight ? '#e74c3c' : '#5a6a8a';
+  ctx.fill();
+  if (highlight) {
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // node label
+    ctx.fillStyle = '#e74c3c';
+    ctx.font = '700 13px Segoe UI, Roboto, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('n' + idx, node.x, node.y - 14);
+  }
+  ctx.restore();
+}
+
+function draw() {
+  clearCanvas();
+  const c = circuits[currentIdx];
+
+  // Draw branches
+  c.branches.forEach(br => drawBranch(c, br, revealed));
+
+  // Draw nodes
+  c.nodes.forEach((nd, i) => drawNode(nd, i, revealed));
+}
+
+// Special draw for bridge circuit with the Vs branch going around the outside
+// (already handled by curvePoint in branch definitions)
+
+// ── Interaction ──────────────────────────────────────────────
+function selectCircuit(idx) {
+  currentIdx = idx;
+  revealed = false;
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('countBtn').textContent = 'Count Topology Elements';
+
+  // Update selector buttons
+  const btns = document.querySelectorAll('.selector button');
+  btns.forEach((b, i) => b.classList.toggle('active', i === idx));
+
+  // Update title/desc
+  const c = circuits[idx];
+  document.getElementById('circuitTitle').textContent = c.name;
+  document.getElementById('circuitDesc').textContent = c.desc;
+
+  draw();
+}
+
+function revealCount() {
+  revealed = true;
+  draw();
+
+  const c = circuits[currentIdx];
+  document.getElementById('mNodes').textContent = c.n;
+  document.getElementById('mBranches').textContent = c.b;
+  document.getElementById('mLoops').textContent = c.l;
+  document.getElementById('mMeshes').textContent = c.m;
+
+  // Verify formula: b = n - 1 + l  (where l = number of independent loops = meshes for planar)
+  const expected = (c.n - 1) + c.m;
+  const ok = expected === c.b;
+
+  document.getElementById('formulaBox').innerHTML =
+    '<div class="eq">Topology Formula:&ensp; b = n &minus; 1 + m</div>' +
+    '<div style="margin-top:6px;">' +
+    c.b + ' = ' + c.n + ' &minus; 1 + ' + c.m +
+    ' &nbsp;&rarr;&nbsp; ' + c.b + ' = ' + expected +
+    '&ensp;<span class="pass">' + (ok ? 'Verified' : 'Check') + '</span></div>' +
+    '<div style="margin-top:8px;font-size:0.82rem;color:#666;">where <b>b</b> = branches, <b>n</b> = nodes, <b>m</b> = independent meshes</div>';
+
+  document.getElementById('results').classList.add('show');
+  document.getElementById('countBtn').textContent = 'Counted';
+}
+
+// Initial draw
+draw();
+</script>
+</body>
+</html>

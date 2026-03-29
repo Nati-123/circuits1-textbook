@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mesh Current Method Solver</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Roboto', 'Segoe UI', sans-serif;
+    background: #f7f9fc;
+    color: #1a1a2e;
+    display: flex;
+    justify-content: center;
+    padding: 24px 12px;
+  }
+  .container { max-width: 720px; width: 100%; }
+  h1 {
+    text-align: center;
+    color: #5A3EED;
+    font-size: 1.6rem;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+  }
+  .card {
+    background: #EEF4FF;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card h2 {
+    color: #5A3EED;
+    font-size: 1.1rem;
+    margin-bottom: 14px;
+    border-bottom: 2px solid #5A3EED;
+    padding-bottom: 6px;
+  }
+  canvas {
+    display: block;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #d0d8f0;
+  }
+  .sliders { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
+  .slider-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+  }
+  .slider-group input[type=range] {
+    width: 100%;
+    accent-color: #5A3EED;
+    cursor: pointer;
+  }
+  .slider-val {
+    font-size: 0.85rem;
+    color: #5A3EED;
+    font-weight: 700;
+    float: right;
+  }
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .result-item {
+    background: #fff;
+    border-radius: 8px;
+    padding: 10px 14px;
+    border-left: 4px solid #5A3EED;
+  }
+  .result-item .label { font-size: 0.78rem; color: #666; }
+  .result-item .value { font-size: 1.05rem; font-weight: 700; color: #1a1a2e; }
+  .equation-box {
+    background: #fff;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.88rem;
+    line-height: 1.7;
+    overflow-x: auto;
+  }
+  .matrix-table {
+    margin: 10px auto;
+    border-collapse: collapse;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+  }
+  .matrix-table td {
+    padding: 4px 10px;
+    text-align: center;
+  }
+  .bracket-left { border-left: 2px solid #333; border-top: 2px solid #333; border-bottom: 2px solid #333; }
+  .bracket-right { border-right: 2px solid #333; border-top: 2px solid #333; border-bottom: 2px solid #333; }
+  .kvl-pass { color: #16a34a; font-weight: 700; }
+  .kvl-fail { color: #dc2626; font-weight: 700; }
+  .kvl-row {
+    background: #fff;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Mesh Current Method Solver</h1>
+  <p class="subtitle">Interactive two-mesh DC circuit analysis</p>
+
+  <!-- Circuit Diagram -->
+  <div class="card">
+    <h2>Circuit Diagram</h2>
+    <canvas id="circuitCanvas" width="680" height="340"></canvas>
+  </div>
+
+  <!-- Controls -->
+  <div class="card">
+    <h2>Component Values</h2>
+    <div class="sliders">
+      <div class="slider-group">
+        <label>V<sub>s</sub> <span class="slider-val" id="vsVal">12 V</span></label>
+        <input type="range" id="vs" min="1" max="24" value="12" step="0.5">
+      </div>
+      <div class="slider-group">
+        <label>R<sub>1</sub> <span class="slider-val" id="r1Val">3 &Omega;</span></label>
+        <input type="range" id="r1" min="1" max="10" value="3" step="0.5">
+      </div>
+      <div class="slider-group">
+        <label>R<sub>2</sub> <span class="slider-val" id="r2Val">6 &Omega;</span></label>
+        <input type="range" id="r2" min="1" max="10" value="6" step="0.5">
+      </div>
+      <div class="slider-group">
+        <label>R<sub>3</sub> <span class="slider-val" id="r3Val">4 &Omega;</span></label>
+        <input type="range" id="r3" min="1" max="10" value="4" step="0.5">
+      </div>
+    </div>
+  </div>
+
+  <!-- Mesh Equations -->
+  <div class="card">
+    <h2>Mesh Equations</h2>
+    <div class="equation-box" id="eqBox"></div>
+    <div class="equation-box" id="matrixBox" style="text-align:center;"></div>
+  </div>
+
+  <!-- Results -->
+  <div class="card">
+    <h2>Solution</h2>
+    <div class="results-grid" id="resultsGrid"></div>
+  </div>
+
+  <!-- KVL Verification -->
+  <div class="card">
+    <h2>KVL Verification</h2>
+    <div id="kvlBox"></div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('circuitCanvas');
+const ctx = canvas.getContext('2d');
+
+const sliders = {
+  vs: document.getElementById('vs'),
+  r1: document.getElementById('r1'),
+  r2: document.getElementById('r2'),
+  r3: document.getElementById('r3')
+};
+
+const valDisplays = {
+  vs: document.getElementById('vsVal'),
+  r1: document.getElementById('r1Val'),
+  r2: document.getElementById('r2Val'),
+  r3: document.getElementById('r3Val')
+};
+
+function getValues() {
+  return {
+    Vs: parseFloat(sliders.vs.value),
+    R1: parseFloat(sliders.r1.value),
+    R2: parseFloat(sliders.r2.value),
+    R3: parseFloat(sliders.r3.value)
+  };
+}
+
+function solve(v) {
+  // Mesh 1: (R1+R2)*I1 - R2*I2 = Vs
+  // Mesh 2: -R2*I1 + (R2+R3)*I2 = 0
+  const a11 = v.R1 + v.R2;
+  const a12 = -v.R2;
+  const a21 = -v.R2;
+  const a22 = v.R2 + v.R3;
+  const det = a11 * a22 - a12 * a21;
+  const I1 = (v.Vs * a22 - 0 * a12) / det;
+  const I2 = (a11 * 0 - v.Vs * a21) / det;
+  return { I1, I2, a11, a12, a21, a22, det };
+}
+
+function fmt(n) { return n.toFixed(3); }
+
+// ---------- DRAW CIRCUIT ----------
+function drawCircuit(v, sol) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const W = canvas.width, H = canvas.height;
+  const mx = 50, my = 50; // margins
+  const cw = W - 2 * mx;  // circuit width
+  const ch = H - 2 * my;  // circuit height
+  const midX = mx + cw / 2;
+
+  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = '#333';
+  ctx.fillStyle = '#333';
+  ctx.font = '13px Roboto, Segoe UI, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // Key nodes
+  const tl = { x: mx, y: my };           // top-left
+  const tm = { x: midX, y: my };         // top-mid
+  const tr = { x: mx + cw, y: my };      // top-right
+  const bl = { x: mx, y: my + ch };      // bottom-left
+  const bm = { x: midX, y: my + ch };    // bottom-mid
+  const br = { x: mx + cw, y: my + ch }; // bottom-right
+
+  // Draw wires
+  function line(a, b) {
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+
+  // Top wires
+  line(tl, { x: tl.x + 60, y: tl.y });
+  line({ x: tm.x - 60, y: tm.y }, tm);
+  line(tm, { x: tm.x + 60, y: tm.y });
+  line({ x: tr.x - 60, y: tr.y }, tr);
+
+  // Bottom wires
+  line(bl, bm);
+  line(bm, br);
+
+  // Left side (Vs)
+  line(bl, { x: bl.x, y: bl.y - 60 });
+  line(tl, { x: tl.x, y: tl.y + 60 });
+
+  // Middle (R2)
+  line(tm, { x: tm.x, y: tm.y + 60 });
+  line(bm, { x: bm.x, y: bm.y - 60 });
+
+  // Right side (R3 - but we keep this on right side from tr to br)
+  // Actually R3 is on the right vertical
+  line(tr, { x: tr.x, y: tr.y + 60 });
+  line(br, { x: br.x, y: br.y - 60 });
+
+  // Draw voltage source (left side)
+  drawVoltageSource(tl.x, tl.y + 60, tl.x, bl.y - 60, v.Vs);
+
+  // Draw R1 (top-left to top-mid)
+  drawResistor(tl.x + 60, tl.y, tm.x - 60, tm.y, 'R\u2081=' + v.R1 + '\u03A9', true);
+
+  // Draw R2 (mid top to mid bottom)
+  drawResistor(tm.x, tm.y + 60, tm.x, bm.y - 60, 'R\u2082=' + v.R2 + '\u03A9', false);
+
+  // Draw R3 (top-right to bottom-right)
+  // Actually R3 is on the top of mesh 2 from tm to tr
+  // Let me reconsider the topology:
+  // Mesh 1: Vs -> R1 -> R2 -> back to Vs (left loop)
+  // Mesh 2: R2 -> R3 -> back (right loop)
+  // Standard layout: Vs on left, R1 on top-left, R2 shared vertical middle, R3 on top-right
+
+  drawResistor(tm.x + 60, tr.y, tr.x - 60, tr.y, 'R\u2083=' + v.R3 + '\u03A9', true);
+
+  // Draw mesh current arrows
+  drawMeshArrow(mx + 10, my + 10, midX - 10, my + ch - 10, 'I\u2081', sol.I1);
+  drawMeshArrow(midX + 10, my + 10, mx + cw - 10, my + ch - 10, 'I\u2082', sol.I2);
+
+  // Node dots
+  [tl, tm, tr, bl, bm, br].forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#5A3EED';
+    ctx.fill();
+  });
+  ctx.fillStyle = '#333';
+
+  // Polarity labels for Vs
+  ctx.font = 'bold 14px Roboto, Segoe UI, sans-serif';
+  ctx.fillStyle = '#c00';
+  ctx.fillText('+', tl.x - 18, tl.y + 80);
+  ctx.fillText('\u2013', bl.x - 18, bl.y - 80);
+  ctx.fillStyle = '#333';
+}
+
+function drawResistor(x1, y1, x2, y2, label, horizontal) {
+  const zigzags = 6;
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  const ux = dx / len, uy = dy / len; // unit along
+  const px = -uy, py = ux;            // perpendicular
+  const amp = 8;
+
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  for (let i = 0; i < zigzags; i++) {
+    const t1 = (i + 0.25) / zigzags;
+    const t2 = (i + 0.5) / zigzags;
+    const t3 = (i + 0.75) / zigzags;
+    const t4 = (i + 1) / zigzags;
+    const side = (i % 2 === 0) ? 1 : -1;
+    ctx.lineTo(x1 + dx * t1 + px * amp * side, y1 + dy * t1 + py * amp * side);
+    ctx.lineTo(x1 + dx * t2 - px * amp * side, y1 + dy * t2 - py * amp * side);
+    if (i === zigzags - 1) {
+      ctx.lineTo(x2, y2);
+    }
+  }
+  ctx.stroke();
+
+  // Label
+  ctx.font = 'bold 12px Roboto, Segoe UI, sans-serif';
+  ctx.fillStyle = '#5A3EED';
+  if (horizontal) {
+    ctx.fillText(label, (x1 + x2) / 2, y1 - 16);
+  } else {
+    ctx.save();
+    ctx.translate((x1 + x2) / 2 + 18, (y1 + y2) / 2);
+    ctx.fillText(label, 0, 0);
+    ctx.restore();
+  }
+  ctx.fillStyle = '#333';
+}
+
+function drawVoltageSource(x1, y1, x2, y2, val) {
+  const cx = (x1 + x2) / 2;
+  const cy = (y1 + y2) / 2;
+  const r = 18;
+
+  // wires to source
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(cx, cy - r); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(cx, cy + r); ctx.stroke();
+
+  // circle
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.strokeStyle = '#5A3EED';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+  ctx.strokeStyle = '#333';
+
+  // label
+  ctx.font = 'bold 12px Roboto, Segoe UI, sans-serif';
+  ctx.fillStyle = '#5A3EED';
+  ctx.fillText('Vs=' + val + 'V', cx - 38, cy);
+  ctx.fillStyle = '#333';
+}
+
+function drawMeshArrow(x1, y1, x2, y2, label, val) {
+  const cx = (x1 + x2) / 2;
+  const cy = (y1 + y2) / 2;
+  const r = Math.min(x2 - x1, y2 - y1) * 0.28;
+
+  ctx.strokeStyle = '#5A3EED';
+  ctx.lineWidth = 1.8;
+
+  // Draw clockwise arc (270 degrees)
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, -Math.PI * 0.6, Math.PI * 1.1);
+  ctx.stroke();
+
+  // Arrowhead at end of arc
+  const endAngle = Math.PI * 1.1;
+  const ax = cx + r * Math.cos(endAngle);
+  const ay = cy + r * Math.sin(endAngle);
+  const headLen = 9;
+  const tangentAngle = endAngle + Math.PI / 2; // tangent for clockwise
+  ctx.beginPath();
+  ctx.moveTo(ax, ay);
+  ctx.lineTo(ax + headLen * Math.cos(tangentAngle - 0.45), ay + headLen * Math.sin(tangentAngle - 0.45));
+  ctx.moveTo(ax, ay);
+  ctx.lineTo(ax + headLen * Math.cos(tangentAngle + 0.45), ay + headLen * Math.sin(tangentAngle + 0.45));
+  ctx.stroke();
+
+  // Label
+  ctx.font = 'bold 14px Roboto, Segoe UI, sans-serif';
+  ctx.fillStyle = '#5A3EED';
+  ctx.fillText(label, cx, cy - 4);
+  ctx.font = '11px Roboto, Segoe UI, sans-serif';
+  ctx.fillText(fmt(val) + ' A', cx, cy + 12);
+  ctx.fillStyle = '#333';
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 2.5;
+}
+
+// ---------- UPDATE ----------
+function update() {
+  const v = getValues();
+  const s = solve(v);
+
+  // Update slider labels
+  valDisplays.vs.textContent = v.Vs + ' V';
+  valDisplays.r1.textContent = v.R1 + ' \u03A9';
+  valDisplays.r2.textContent = v.R2 + ' \u03A9';
+  valDisplays.r3.textContent = v.R3 + ' \u03A9';
+
+  // Draw circuit
+  drawCircuit(v, s);
+
+  // Branch currents
+  const IR1 = s.I1;
+  const IR2 = s.I1 - s.I2; // through R2 downward from mesh 1 perspective
+  const IR3 = s.I2;
+
+  // Voltage drops
+  const VR1 = IR1 * v.R1;
+  const VR2 = IR2 * v.R2;
+  const VR3 = IR3 * v.R3;
+
+  // Mesh equations
+  document.getElementById('eqBox').innerHTML =
+    '<strong>Mesh 1 (KVL clockwise):</strong><br>' +
+    `&nbsp;&nbsp;(R\u2081 + R\u2082)\u00B7I\u2081 - R\u2082\u00B7I\u2082 = V<sub>s</sub><br>` +
+    `&nbsp;&nbsp;(${v.R1} + ${v.R2})\u00B7I\u2081 - ${v.R2}\u00B7I\u2082 = ${v.Vs}<br>` +
+    `&nbsp;&nbsp;${s.a11}\u00B7I\u2081 - ${v.R2}\u00B7I\u2082 = ${v.Vs}<br><br>` +
+    '<strong>Mesh 2 (KVL clockwise):</strong><br>' +
+    `&nbsp;&nbsp;-R\u2082\u00B7I\u2081 + (R\u2082 + R\u2083)\u00B7I\u2082 = 0<br>` +
+    `&nbsp;&nbsp;-${v.R2}\u00B7I\u2081 + (${v.R2} + ${v.R3})\u00B7I\u2082 = 0<br>` +
+    `&nbsp;&nbsp;-${v.R2}\u00B7I\u2081 + ${s.a22}\u00B7I\u2082 = 0`;
+
+  // Matrix form
+  document.getElementById('matrixBox').innerHTML =
+    '<strong>Matrix Form: [R][I] = [V]</strong><br><br>' +
+    '<table class="matrix-table" style="display:inline-table;">' +
+    `<tr><td class="bracket-left">${s.a11}</td><td class="bracket-right">${s.a12}</td>` +
+    `<td></td>` +
+    `<td class="bracket-left">I\u2081</td><td class="bracket-right"></td>` +
+    `<td>&nbsp;=&nbsp;</td>` +
+    `<td class="bracket-left">${v.Vs}</td><td class="bracket-right"></td></tr>` +
+    `<tr><td class="bracket-left">${s.a21}</td><td class="bracket-right">${s.a22}</td>` +
+    `<td></td>` +
+    `<td class="bracket-left">I\u2082</td><td class="bracket-right"></td>` +
+    `<td>&nbsp;=&nbsp;</td>` +
+    `<td class="bracket-left">0</td><td class="bracket-right"></td></tr>` +
+    '</table>' +
+    `<br><br>det = ${s.a11}\u00D7${s.a22} - (${s.a12})\u00D7(${s.a21}) = ${fmt(s.det)}`;
+
+  // Results
+  document.getElementById('resultsGrid').innerHTML =
+    resultCard('Mesh Current I\u2081', fmt(s.I1) + ' A') +
+    resultCard('Mesh Current I\u2082', fmt(s.I2) + ' A') +
+    resultCard('Branch Current I<sub>R1</sub>', fmt(IR1) + ' A') +
+    resultCard('Branch Current I<sub>R2</sub>', fmt(IR2) + ' A') +
+    resultCard('Branch Current I<sub>R3</sub>', fmt(IR3) + ' A') +
+    resultCard('Voltage V<sub>R1</sub>', fmt(VR1) + ' V') +
+    resultCard('Voltage V<sub>R2</sub>', fmt(VR2) + ' V') +
+    resultCard('Voltage V<sub>R3</sub>', fmt(VR3) + ' V');
+
+  // KVL verification
+  const kvl1 = -v.Vs + VR1 + VR2;
+  const kvl2 = -VR2 + VR3;
+  const tol = 1e-9;
+
+  document.getElementById('kvlBox').innerHTML =
+    '<div class="kvl-row">' +
+    '<strong>Mesh 1:</strong> -V<sub>s</sub> + V<sub>R1</sub> + V<sub>R2</sub> = ' +
+    `${fmt(-v.Vs)} + ${fmt(VR1)} + ${fmt(VR2)} = <strong>${fmt(kvl1)}</strong> ` +
+    (Math.abs(kvl1) < tol ? '<span class="kvl-pass">PASS</span>' : '<span class="kvl-fail">FAIL</span>') +
+    '</div>' +
+    '<div class="kvl-row">' +
+    '<strong>Mesh 2:</strong> -V<sub>R2</sub> + V<sub>R3</sub> = ' +
+    `${fmt(-VR2)} + ${fmt(VR3)} = <strong>${fmt(kvl2)}</strong> ` +
+    (Math.abs(kvl2) < tol ? '<span class="kvl-pass">PASS</span>' : '<span class="kvl-fail">FAIL</span>') +
+    '</div>';
+}
+
+function resultCard(label, value) {
+  return `<div class="result-item"><div class="label">${label}</div><div class="value">${value}</div></div>`;
+}
+
+// Event listeners
+Object.values(sliders).forEach(s => s.addEventListener('input', update));
+
+// Initial render
+update();
+</script>
+</body>
+</html>

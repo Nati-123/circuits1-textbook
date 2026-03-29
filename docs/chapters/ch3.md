@@ -235,6 +235,12 @@ The fourth wire carries zero current — the inflows and outflows already balanc
 </p>
 </div>
 
+<h4 style="color: #5A3EED; font-weight: 700; margin-top: 2rem; margin-bottom: 0.8rem;">Interactive Simulation: KCL Node Current Balance</h4>
+
+<div style="background: #EEF4FF; border: 2px solid #A8C8FF; border-radius: 12px; padding: 18px; margin: 1rem 0; box-shadow: 0 2px 8px rgba(90,61,237,0.07);">
+<iframe src="../../sims/kcl-node-simulator/main.html" width="100%" height="620px" scrolling="no" style="border:none; border-radius:8px; overflow:hidden;"></iframe>
+</div>
+
 ---
 
 <h2 id="32-kvl" style="color: #5A3EED !important; border-left: none !important; border-bottom: 2px solid #5A3EED; padding-left: 0 !important; padding-bottom: 0.4rem; font-weight: 800; margin-top: 2.2rem; margin-bottom: 0.8rem;">3.2 Kirchhoff's Voltage Law (KVL)</h2>
@@ -362,6 +368,12 @@ Three independent meshes means we need 3 KVL equations (or equivalently, 3 KCL e
 </p>
 </div>
 
+<h4 style="color: #5A3EED; font-weight: 700; margin-top: 2rem; margin-bottom: 0.8rem;">Interactive Simulation: Circuit Topology Explorer</h4>
+
+<div style="background: #EEF4FF; border: 2px solid #A8C8FF; border-radius: 12px; padding: 18px; margin: 1rem 0; box-shadow: 0 2px 8px rgba(90,61,237,0.07);">
+<iframe src="../../sims/topology-counter/main.html" width="100%" height="620px" scrolling="no" style="border:none; border-radius:8px; overflow:hidden;"></iframe>
+</div>
+
 ---
 
 <h2 id="34-node-voltage" style="color: #5A3EED !important; border-left: none !important; border-bottom: 2px solid #5A3EED; padding-left: 0 !important; padding-bottom: 0.4rem; font-weight: 800; margin-top: 2.2rem; margin-bottom: 0.8rem;">3.4 The Node Voltage Method</h2>
@@ -427,6 +439,12 @@ When a voltage source connects two non-reference nodes, the current through it i
 <li style="margin-bottom: 0.9rem; line-height: 1.75; color: #333;"><span style="color: #5A3EED; font-weight: 700; margin-right: 0.5rem;">&#9679;</span> Write a KCL equation for the entire supernode</li>
 <li style="margin-bottom: 0.9rem; line-height: 1.75; color: #333;"><span style="color: #5A3EED; font-weight: 700; margin-right: 0.5rem;">&#9679;</span> Add a constraint equation: \(V_a - V_b = V_s\)</li>
 </ul>
+
+<h4 style="color: #5A3EED; font-weight: 700; margin-top: 2rem; margin-bottom: 0.8rem;">Interactive Simulation: Node Voltage Method Solver</h4>
+
+<div style="background: #EEF4FF; border: 2px solid #A8C8FF; border-radius: 12px; padding: 18px; margin: 1rem 0; box-shadow: 0 2px 8px rgba(90,61,237,0.07);">
+<iframe src="../../sims/node-voltage-solver/main.html" width="100%" height="750px" scrolling="no" style="border:none; border-radius:8px; overflow:hidden;"></iframe>
+</div>
 
 ---
 
@@ -497,6 +515,12 @@ Solving: \(I_1 = 2.22\) A, \(I_2 = 1.33\) A. The resistance matrix is symmetric 
 When a current source is shared between two meshes, KVL cannot be written directly for that branch. The <strong style="color: #333;">supermesh</strong> resolves this by combining the two meshes into a single outer loop and adding the constraint \(I_2 - I_1 = I_s\).
 </p>
 
+<h4 style="color: #5A3EED; font-weight: 700; margin-top: 2rem; margin-bottom: 0.8rem;">Interactive Simulation: Mesh Current Method Solver</h4>
+
+<div style="background: #EEF4FF; border: 2px solid #A8C8FF; border-radius: 12px; padding: 18px; margin: 1rem 0; box-shadow: 0 2px 8px rgba(90,61,237,0.07);">
+<iframe src="../../sims/mesh-current-solver/main.html" width="100%" height="750px" scrolling="no" style="border:none; border-radius:8px; overflow:hidden;"></iframe>
+</div>
+
 ---
 
 <h2 id="36-superposition" style="color: #5A3EED !important; border-left: none !important; border-bottom: 2px solid #5A3EED; padding-left: 0 !important; padding-bottom: 0.4rem; font-weight: 800; margin-top: 2.2rem; margin-bottom: 0.8rem;">3.6 The Superposition Principle</h2>
@@ -528,6 +552,12 @@ A circuit has a 12 V voltage source and a 2 A current source. To find the curren
 </ul>
 </div>
 
+<h4 style="color: #5A3EED; font-weight: 700; margin-top: 2rem; margin-bottom: 0.8rem;">Interactive Simulation: Superposition Principle Demonstrator</h4>
+
+<div style="background: #EEF4FF; border: 2px solid #A8C8FF; border-radius: 12px; padding: 18px; margin: 1rem 0; box-shadow: 0 2px 8px rgba(90,61,237,0.07);">
+<iframe src="../../sims/superposition-demo/main.html" width="100%" height="700px" scrolling="no" style="border:none; border-radius:8px; overflow:hidden;"></iframe>
+</div>
+
 ---
 
 <h2 id="37-equivalent" style="color: #5A3EED !important; border-left: none !important; border-bottom: 2px solid #5A3EED; padding-left: 0 !important; padding-bottom: 0.4rem; font-weight: 800; margin-top: 2.2rem; margin-bottom: 0.8rem;">3.7 Load and Equivalent Resistance</h2>
@@ -544,6 +574,12 @@ A circuit has a 12 V voltage source and a 2 A current source. To find the curren
 | Parallel | \(\frac{1}{R_{eq}} = \frac{1}{R_1} + \frac{1}{R_2} + \cdots + \frac{1}{R_n}\) |
 | Mixed | Combine step by step |
 
+</div>
+
+<h4 style="color: #5A3EED; font-weight: 700; margin-top: 2rem; margin-bottom: 0.8rem;">Interactive Simulation: Equivalent Resistance Calculator</h4>
+
+<div style="background: #EEF4FF; border: 2px solid #A8C8FF; border-radius: 12px; padding: 18px; margin: 1rem 0; box-shadow: 0 2px 8px rgba(90,61,237,0.07);">
+<iframe src="../../sims/equivalent-resistance/main.html" width="100%" height="700px" scrolling="no" style="border:none; border-radius:8px; overflow:hidden;"></iframe>
 </div>
 
 ---
@@ -577,6 +613,12 @@ $$R_a = \frac{R_1 R_2 + R_2 R_3 + R_1 R_3}{R_3} \qquad R_b = \frac{R_1 R_2 + R_2
 
 <div style="background: #FFF8E1; border-left: 4px solid #F0D87A; border-radius: 8px; padding: 16px 20px; margin: 1rem 0;">
 <strong style="color: #B8860B;">When to Use:</strong> Bridge circuits (Wheatstone bridge), complex networks that resist series/parallel simplification, and three-phase power systems. Always try series/parallel reduction first — it is simpler and less error-prone.
+</div>
+
+<h4 style="color: #5A3EED; font-weight: 700; margin-top: 2rem; margin-bottom: 0.8rem;">Interactive Simulation: Delta-Wye Transformation Calculator</h4>
+
+<div style="background: #EEF4FF; border: 2px solid #A8C8FF; border-radius: 12px; padding: 18px; margin: 1rem 0; box-shadow: 0 2px 8px rgba(90,61,237,0.07);">
+<iframe src="../../sims/delta-wye-calculator/main.html" width="100%" height="650px" scrolling="no" style="border:none; border-radius:8px; overflow:hidden;"></iframe>
 </div>
 
 ---
