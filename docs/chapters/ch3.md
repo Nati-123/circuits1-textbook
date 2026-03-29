@@ -22,14 +22,6 @@ Combined with circuit topology and systematic methods, these laws make it possib
 
 </details>
 
-<h2 style="color: #5A3EED !important; border-bottom: 2px solid #5A3EED; padding-bottom: 0.3rem; font-weight: 700; margin-top: 2rem;">Summary</h2>
-
-<div style="background: #EEF4FF; border: 2px solid #A8C8FF; border-radius: 12px; padding: 20px 24px; margin: 1rem 0; box-shadow: 0 2px 8px rgba(90,61,237,0.07);">
-<p style="color: #333; line-height: 1.85; font-size: 1.02rem; margin: 0;">
-This chapter covers Kirchhoff's Voltage Law (KVL) and Kirchhoff's Current Law (KCL), circuit topology concepts including loops and meshes, and the systematic node voltage and mesh current analysis methods. Special cases including supernodes, supermeshes, and the superposition principle are addressed. The chapter concludes with delta-wye transformations and strategies for choosing the best analysis method. By the end, students will be able to systematically solve any DC circuit.
-</p>
-</div>
-
 <h2 style="color: #5A3EED !important; border-bottom: 2px solid #5A3EED; padding-bottom: 0.3rem; font-weight: 700; margin-top: 2rem;">Concepts Covered</h2>
 
 <div style="background: #F8F6FF; border: 2px solid #D4C8FF; border-radius: 12px; padding: 20px 24px; margin: 1rem 0;" markdown>
@@ -74,44 +66,96 @@ Before beginning this chapter, students should have:
 The following diagram shows how Chapter 3 concepts build upon Chapters 1–2 and relate to each other.
 </p>
 
-<div style="background: #EEF4FF; border: 2px solid #A8C8FF; border-radius: 12px; padding: 18px; margin: 1rem 0; box-shadow: 0 2px 8px rgba(90,61,237,0.07);">
+<div style="background: #EEF4FF; border: 2px solid #A8C8FF; border-radius: 12px; padding: 24px; margin: 1rem 0; box-shadow: 0 2px 8px rgba(90,61,237,0.07); overflow-x: auto;">
+<svg viewBox="0 0 780 520" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:780px;display:block;margin:0 auto;" font-family="Roboto, Segoe UI, sans-serif">
+  <!-- Row 0: Ch1 -->
+  <rect x="250" y="10" width="280" height="44" rx="10" fill="#F8F6FF" stroke="#5A3EED" stroke-width="2"/>
+  <text x="390" y="37" text-anchor="middle" font-size="13" fill="#333"><tspan font-weight="700">Ch 1:</tspan> Charge, Voltage, Current, Resistance</text>
+  <!-- Arrow 0→1 -->
+  <line x1="390" y1="54" x2="390" y2="76" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
 
-```mermaid
-graph TD
-    A["<b>Ch 1:</b> Charge, Voltage,<br/>Current, Resistance"] --> B["<b>Ch 2:</b> Ohm's Law,<br/>Series & Parallel"]
-    B --> C["<b>Nodes & Branches</b><br/>Circuit Topology"]
-    C --> D["<b>KCL</b><br/>Conservation of Charge"]
-    C --> E["<b>KVL</b><br/>Conservation of Energy"]
-    C --> F["<b>Loops & Meshes</b>"]
-    D --> G["<b>Node Voltage Method</b>"]
-    E --> H["<b>Mesh Current Method</b>"]
-    G --> I["Supernode"]
-    H --> J["Supermesh"]
-    D --> K["<b>Superposition</b>"]
-    E --> K
-    G --> L["<b>Matrix Methods</b>"]
-    H --> L
-    B --> M["<b>Delta-Wye<br/>Transformation</b>"]
-    M --> N["<b>Circuit Simplification</b>"]
-    K --> N
-    L --> N
+  <!-- Row 1: Ch2 -->
+  <rect x="250" y="76" width="280" height="44" rx="10" fill="#F8F6FF" stroke="#5A3EED" stroke-width="2"/>
+  <text x="390" y="103" text-anchor="middle" font-size="13" fill="#333"><tspan font-weight="700">Ch 2:</tspan> Ohm's Law, Series &amp; Parallel</text>
+  <!-- Arrows 1→2 and 1→DY -->
+  <line x1="390" y1="120" x2="390" y2="152" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="500" y1="120" x2="650" y2="152" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
 
-    style A fill:#F8F6FF,stroke:#5A3EED,color:#333
-    style B fill:#F8F6FF,stroke:#5A3EED,color:#333
-    style C fill:#EEF4FF,stroke:#A8C8FF,color:#333
-    style D fill:#E7F7E7,stroke:#81C784,color:#333
-    style E fill:#E7F7E7,stroke:#81C784,color:#333
-    style F fill:#EEF4FF,stroke:#A8C8FF,color:#333
-    style G fill:#FFF7DD,stroke:#F0D87A,color:#333
-    style H fill:#FFF7DD,stroke:#F0D87A,color:#333
-    style I fill:#FFF7DD,stroke:#F0D87A,color:#333
-    style J fill:#FFF7DD,stroke:#F0D87A,color:#333
-    style K fill:#FFF7DD,stroke:#F0D87A,color:#333
-    style L fill:#EEF4FF,stroke:#A8C8FF,color:#333
-    style M fill:#FFF7DD,stroke:#F0D87A,color:#333
-    style N fill:#E7F7E7,stroke:#81C784,color:#333
-```
+  <!-- Row 2: Topology center -->
+  <rect x="265" y="152" width="250" height="44" rx="10" fill="#EEF4FF" stroke="#A8C8FF" stroke-width="2"/>
+  <text x="390" y="179" text-anchor="middle" font-size="13" fill="#333"><tspan font-weight="700">Nodes &amp; Branches</tspan> — Circuit Topology</text>
+  <!-- Delta-Wye right -->
+  <rect x="575" y="152" width="180" height="44" rx="10" fill="#FFF7DD" stroke="#F0D87A" stroke-width="2"/>
+  <text x="665" y="179" text-anchor="middle" font-size="13" fill="#333"><tspan font-weight="700">Delta-Wye</tspan> Transform</text>
 
+  <!-- Arrows from Topology → KCL, KVL, Loops -->
+  <line x1="330" y1="196" x2="170" y2="232" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="390" y1="196" x2="390" y2="232" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="450" y1="196" x2="580" y2="232" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Row 3: KCL, Loops & Meshes, KVL -->
+  <rect x="55" y="232" width="230" height="44" rx="10" fill="#E7F7E7" stroke="#81C784" stroke-width="2"/>
+  <text x="170" y="259" text-anchor="middle" font-size="13" fill="#333"><tspan font-weight="700">KCL</tspan> — Conservation of Charge</text>
+
+  <rect x="305" y="232" width="170" height="44" rx="10" fill="#EEF4FF" stroke="#A8C8FF" stroke-width="2"/>
+  <text x="390" y="259" text-anchor="middle" font-size="13" fill="#333"><tspan font-weight="700">Loops &amp; Meshes</tspan></text>
+
+  <rect x="500" y="232" width="230" height="44" rx="10" fill="#E7F7E7" stroke="#81C784" stroke-width="2"/>
+  <text x="615" y="259" text-anchor="middle" font-size="13" fill="#333"><tspan font-weight="700">KVL</tspan> — Conservation of Energy</text>
+
+  <!-- Arrows Row3 → Row4 -->
+  <line x1="170" y1="276" x2="170" y2="312" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="615" y1="276" x2="615" y2="312" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
+  <!-- KCL → Superposition, KVL → Superposition -->
+  <line x1="240" y1="276" x2="370" y2="312" stroke="#5A3EED" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arr)"/>
+  <line x1="540" y1="276" x2="420" y2="312" stroke="#5A3EED" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arr)"/>
+
+  <!-- Row 4: Node Voltage, Superposition, Mesh Current -->
+  <rect x="55" y="312" width="230" height="44" rx="10" fill="#FFF7DD" stroke="#F0D87A" stroke-width="2"/>
+  <text x="170" y="339" text-anchor="middle" font-size="13" fill="#333"><tspan font-weight="700">Node Voltage Method</tspan></text>
+
+  <rect x="310" y="312" width="160" height="44" rx="10" fill="#FFF7DD" stroke="#F0D87A" stroke-width="2"/>
+  <text x="390" y="339" text-anchor="middle" font-size="13" fill="#333"><tspan font-weight="700">Superposition</tspan></text>
+
+  <rect x="500" y="312" width="230" height="44" rx="10" fill="#FFF7DD" stroke="#F0D87A" stroke-width="2"/>
+  <text x="615" y="339" text-anchor="middle" font-size="13" fill="#333"><tspan font-weight="700">Mesh Current Method</tspan></text>
+
+  <!-- Arrows → Row 5 special cases -->
+  <line x1="120" y1="356" x2="120" y2="392" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="660" y1="356" x2="660" y2="392" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
+  <!-- Node Voltage → Matrix -->
+  <line x1="220" y1="356" x2="340" y2="392" stroke="#5A3EED" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arr)"/>
+  <!-- Mesh Current → Matrix -->
+  <line x1="560" y1="356" x2="440" y2="392" stroke="#5A3EED" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arr)"/>
+
+  <!-- Row 5: Supernode, Matrix Methods, Supermesh -->
+  <rect x="30" y="392" width="180" height="40" rx="10" fill="#FFF7DD" stroke="#F0D87A" stroke-width="2"/>
+  <text x="120" y="416" text-anchor="middle" font-size="13" fill="#333">Supernode</text>
+
+  <rect x="290" y="392" width="200" height="40" rx="10" fill="#EEF4FF" stroke="#A8C8FF" stroke-width="2"/>
+  <text x="390" y="416" text-anchor="middle" font-size="13" fill="#333"><tspan font-weight="700">Matrix Methods</tspan></text>
+
+  <rect x="570" y="392" width="180" height="40" rx="10" fill="#FFF7DD" stroke="#F0D87A" stroke-width="2"/>
+  <text x="660" y="416" text-anchor="middle" font-size="13" fill="#333">Supermesh</text>
+
+  <!-- Arrows → Circuit Simplification -->
+  <line x1="390" y1="432" x2="390" y2="462" stroke="#5A3EED" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="665" y1="196" x2="665" y2="440" stroke="#5A3EED" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <line x1="665" y1="440" x2="530" y2="462" stroke="#5A3EED" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arr)"/>
+  <!-- Superposition → Simplification -->
+  <line x1="390" y1="356" x2="340" y2="462" stroke="#5A3EED" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arr)"/>
+
+  <!-- Row 6: Circuit Simplification -->
+  <rect x="255" y="462" width="270" height="44" rx="10" fill="#E7F7E7" stroke="#81C784" stroke-width="2"/>
+  <text x="390" y="489" text-anchor="middle" font-size="14" font-weight="700" fill="#333">Circuit Simplification</text>
+
+  <!-- Arrow marker -->
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A3EED"/>
+    </marker>
+  </defs>
+</svg>
 </div>
 
 ---
@@ -254,7 +298,7 @@ The 12 V supplied by the battery is entirely dissipated across the three resisto
 <h4 style="color: #5A3EED; font-weight: 700; margin-top: 2rem; margin-bottom: 0.8rem;">Interactive Simulation: KVL Loop Voltage Sum</h4>
 
 <div style="background: #EEF4FF; border: 2px solid #A8C8FF; border-radius: 12px; padding: 18px; margin: 1rem 0; box-shadow: 0 2px 8px rgba(90,61,237,0.07);">
-<iframe src="../sims/kvl-loop-simulator/main.html" width="100%" height="580px" scrolling="no" style="border:none; border-radius:8px; overflow:hidden;"></iframe>
+<iframe src="../../sims/kvl-loop-simulator/main.html" width="100%" height="580px" scrolling="no" style="border:none; border-radius:8px; overflow:hidden;"></iframe>
 </div>
 
 <div style="background: #E7F7E7; border: 2px solid #81C784; border-radius: 12px; padding: 24px 28px; margin: 1.5rem 0; box-shadow: 0 2px 8px rgba(56,142,60,0.08);">
