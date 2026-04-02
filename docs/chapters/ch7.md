@@ -114,46 +114,6 @@ Notice that the undamped natural frequency \(\omega_0\) is the same for both con
 
 <iframe src="../sims/rlc-circuit/main.html" width="100%" height="670px" scrolling="no" style="overflow: hidden;"></iframe>
 
-<details markdown="1">
-<summary>Series vs Parallel RLC Configuration</summary>
-Type: microsim
-
-Bloom Level: Understand (L2)
-Bloom Verb: compare
-
-Learning Objective: Students will compare the mathematical differences between series and parallel RLC circuits by observing how component arrangement affects damping and impedance.
-
-Visual elements:
-- Split canvas showing series RLC (left) and parallel RLC (right)
-- Animated current flow in series circuit
-- Animated voltage indication in parallel circuit
-- Real-time equations displayed below each circuit
-- Parameter values shown for R, L, and C
-
-Interactive controls:
-- Slider: Resistance R (10Ω to 1000Ω)
-- Slider: Inductance L (1mH to 100mH)
-- Slider: Capacitance C (0.1μF to 10μF)
-- Toggle: Show/hide damping coefficient calculation
-- Toggle: Show/hide natural frequency calculation
-
-Display panels:
-- Series circuit: α = R/2L, ω₀ = 1/√(LC)
-- Parallel circuit: α = 1/2RC, ω₀ = 1/√(LC)
-- Comparison: "Same ω₀, different damping!"
-
-Default parameters:
-- R = 100Ω
-- L = 10mH
-- C = 1μF
-
-Canvas layout:
-- Drawing area: 600 × 350 pixels
-- Control area: 100 pixels below
-
-Implementation: p5.js with circuit component library
-</details>
-
 ## The Characteristic Equation: Finding the Roots
 
 To solve the homogeneous second-order equation (no forcing function), we assume a solution of the form \(x = Ae^{st}\). Substituting this into the differential equation gives us the **characteristic equation**:
@@ -203,44 +163,6 @@ The natural frequency depends only on the energy storage elements (L and C), not
 #### Diagram: Natural Frequency Calculator
 
 <iframe src="../sims/natural-frequency-calculator/main.html" width="100%" height="500px" scrolling="no" style="overflow: hidden;"></iframe>
-
-<details markdown="1">
-<summary>Natural Frequency Calculator</summary>
-Type: microsim
-
-Bloom Level: Apply (L3)
-Bloom Verb: calculate
-
-Learning Objective: Students will calculate natural frequency from inductance and capacitance values and observe the inverse square root relationship.
-
-Visual elements:
-- Large display showing f₀ in Hz and ω₀ in rad/s
-- Graphical representation of L and C as physical components
-- Log-log plot showing f₀ vs LC product
-- Current point highlighted on curve
-
-Interactive controls:
-- Slider: Inductance L (0.1mH to 100mH, logarithmic)
-- Slider: Capacitance C (0.01μF to 100μF, logarithmic)
-- Display: LC product value
-- Display: Period T = 1/f₀
-
-Calculation display:
-- Show step-by-step: ω₀ = 1/√(LC) = 1/√(value) = result
-- Convert to Hz: f₀ = ω₀/2π = result
-
-Default parameters:
-- L = 10mH
-- C = 1μF
-- Expected f₀ ≈ 1,592 Hz
-
-Canvas layout:
-- Calculator display: 300 × 200 pixels (top)
-- Log-log plot: 300 × 150 pixels (bottom)
-- Control area: 100 pixels below
-
-Implementation: p5.js
-</details>
 
 ## Damping Ratio: How Quickly the Drama Fades
 
@@ -297,49 +219,6 @@ Think of overdamped response like a door closer that's been adjusted too tight�
 
 <iframe src="../sims/overdamped-response/main.html" width="100%" height="450px" scrolling="no" style="overflow: hidden;"></iframe>
 
-<details markdown="1">
-<summary>Overdamped Step Response</summary>
-Type: microsim
-
-Bloom Level: Understand (L2)
-Bloom Verb: explain
-
-Learning Objective: Students will explain how overdamped circuits return to equilibrium without oscillation by observing the sum of two exponential decays.
-
-Visual elements:
-- Main plot: Response x(t) vs time
-- Two separate exponential components shown as dashed lines
-- Sum shown as solid line
-- Final value shown as horizontal dashed line
-- Annotations showing s₁ and s₂ values
-
-Step-through mode:
-- Stage 1: Show the two roots s₁ and s₂ on number line
-- Stage 2: Show first exponential e^(s₁t) - fast decay
-- Stage 3: Show second exponential e^(s₂t) - slow decay
-- Stage 4: Show sum forming the total response
-- Stage 5: Highlight that no zero crossings occur
-
-Interactive controls:
-- Slider: Damping ratio ζ (1.1 to 3.0)
-- Button: Next Step / Previous Step
-- Button: Animate continuous
-- Display: Root values s₁ and s₂
-- Display: Settling time estimate
-
-Default parameters:
-- ζ = 1.5
-- ω₀ = 1000 rad/s (for visualization scaling)
-
-Canvas layout:
-- Plot area: 600 × 300 pixels
-- Control area: 100 pixels below
-
-Instructional Rationale: Step-through reveals how the two exponential components combine to create the overdamped response, making the mathematics visible.
-
-Implementation: p5.js
-</details>
-
 ## Underdamped Response: The Exciting One
 
 When \(0 < \zeta < 1\) (or \(\alpha < \omega_0\)), the circuit is **underdamped**. Now the characteristic equation has complex conjugate roots:
@@ -384,47 +263,6 @@ Notice that light damping barely affects the frequency, but heavy damping signif
 #### Diagram: Underdamped Oscillation Anatomy
 
 <iframe src="../sims/underdamped-oscillation/main.html" width="100%" height="500px" scrolling="no" style="overflow: hidden;"></iframe>
-
-<details markdown="1">
-<summary>Underdamped Oscillation Anatomy</summary>
-Type: microsim
-
-Bloom Level: Analyze (L4)
-Bloom Verb: examine
-
-Learning Objective: Students will examine the components of underdamped response including the envelope, oscillation frequency, and overshoot.
-
-Visual elements:
-- Main plot: Response x(t) vs time with oscillations
-- Upper envelope: +Ce^(-αt) shown as dashed line
-- Lower envelope: -Ce^(-αt) shown as dashed line
-- Period markers showing T_d = 2π/ω_d
-- First peak (overshoot) highlighted and labeled
-- Settling band (±2% of final value) shown as shaded region
-
-Interactive controls:
-- Slider: Damping ratio ζ (0.05 to 0.95)
-- Slider: Natural frequency ω₀ (100 to 10,000 rad/s)
-- Toggle: Show/hide envelope
-- Toggle: Show/hide period markers
-- Display: Calculated values (ω_d, T_d, overshoot %)
-
-Calculations displayed:
-- ω_d = ω₀√(1-ζ²)
-- T_d = 2π/ω_d
-- Overshoot = e^(-πζ/√(1-ζ²)) × 100%
-- Settling time ≈ 4/α
-
-Default parameters:
-- ζ = 0.3
-- ω₀ = 1000 rad/s
-
-Canvas layout:
-- Plot area: 600 × 350 pixels
-- Control area: 100 pixels below
-
-Implementation: p5.js
-</details>
 
 ### Overshoot and Settling Time
 
@@ -482,50 +320,6 @@ Critical damping is often the design target for:
 
 <iframe src="../sims/damping-comparison/main.html" width="100%" height="500px" scrolling="no" style="overflow: hidden;"></iframe>
 
-<details markdown="1">
-<summary>Three Damping Regimes Comparison</summary>
-Type: microsim
-
-Bloom Level: Analyze (L4)
-Bloom Verb: compare
-
-Learning Objective: Students will compare overdamped, critically damped, and underdamped responses to understand the trade-offs in damping selection.
-
-Visual elements:
-- Single plot showing three response curves simultaneously
-- Underdamped: Blue curve with oscillations
-- Critically damped: Green curve (optimal path)
-- Overdamped: Red curve (slow approach)
-- Target/final value shown as horizontal line
-- Time axis with settling time markers for each
-- Settling band (±2%) shown as shaded region
-
-Interactive controls:
-- Master slider: Natural frequency ω₀ (sets timescale)
-- Slider: Underdamped ζ (0.1 to 0.9)
-- Slider: Overdamped ζ (1.1 to 3.0)
-- Button: Reset to defaults
-- Toggle: Show/hide settling times
-- Toggle: Show/hide overshoot measurement
-
-Annotations:
-- "Fastest to settle" arrow pointing to critically damped curve
-- "Overshoot" measurement on underdamped curve
-- "Sluggish" label on overdamped curve
-
-Default parameters:
-- ω₀ = 1000 rad/s
-- Underdamped ζ = 0.3
-- Overdamped ζ = 2.0
-- Critically damped ζ = 1.0 (fixed reference)
-
-Canvas layout:
-- Plot area: 600 × 350 pixels
-- Control area: 100 pixels below
-
-Implementation: p5.js
-</details>
-
 ## Resonant Frequency: When Circuits Sing
 
 **Resonant frequency** \(\omega_r\) is the frequency at which a circuit's response is maximum. For a series RLC circuit driven by a sinusoidal source, resonance occurs when the inductive reactance equals the capacitive reactance:
@@ -563,55 +357,6 @@ With no losses (R = 0), this would continue forever. With resistance, some energ
 #### Diagram: Series RLC Resonance Explorer
 
 <iframe src="../sims/series-resonance/main.html" width="100%" height="500px" scrolling="no" style="overflow: hidden;"></iframe>
-
-<details markdown="1">
-<summary>Series RLC Resonance Explorer</summary>
-Type: microsim
-
-Bloom Level: Apply (L3)
-Bloom Verb: demonstrate
-
-Learning Objective: Students will demonstrate resonance in a series RLC circuit by finding the frequency where current is maximized and impedance is minimized.
-
-Visual elements:
-- Left panel: Circuit diagram with animated current flow
-- Center panel: Impedance magnitude |Z| vs frequency plot
-- Right panel: Current magnitude |I| vs frequency plot
-- Vertical line showing current frequency position
-- Resonance peak clearly marked
-- Phase angle display
-
-Interactive controls:
-- Slider: Driving frequency f (0.1× to 10× resonant frequency)
-- Slider: Resistance R (10Ω to 1000Ω)
-- Slider: Inductance L (1mH to 100mH)
-- Slider: Capacitance C (0.1μF to 10μF)
-- Button: "Jump to Resonance"
-- Display: f₀, current frequency, |Z|, |I|
-
-Calculations shown:
-- f₀ = 1/(2π√(LC))
-- At current frequency: X_L = ωL, X_C = 1/ωC
-- |Z| = √(R² + (X_L - X_C)²)
-- |I| = V/|Z|
-
-Observations highlighted:
-- At resonance: X_L = X_C, so Z = R
-- Below resonance: Capacitive (X_C > X_L)
-- Above resonance: Inductive (X_L > X_C)
-
-Default parameters:
-- R = 100Ω
-- L = 10mH
-- C = 1μF
-- f₀ ≈ 1592 Hz
-
-Canvas layout:
-- Drawing area: 600 × 350 pixels
-- Control area: 100 pixels below
-
-Implementation: p5.js
-</details>
 
 ## Quality Factor: How Sharp is the Resonance?
 
@@ -671,51 +416,6 @@ Notice that Q has opposite relationships with R for series vs. parallel circuits
 
 <iframe src="../sims/quality-factor/main.html" width="100%" height="500px" scrolling="no" style="overflow: hidden;"></iframe>
 
-<details markdown="1">
-<summary>Quality Factor and Bandwidth</summary>
-Type: microsim
-
-Bloom Level: Analyze (L4)
-Bloom Verb: examine
-
-Learning Objective: Students will examine how quality factor affects resonance sharpness and bandwidth by observing frequency response curves.
-
-Visual elements:
-- Main plot: Normalized magnitude response vs frequency (log scale)
-- Multiple curves showing different Q values (5, 10, 20, 50)
-- 3dB points marked on each curve
-- Bandwidth arrows connecting 3dB points
-- Peak labeled with Q value
-
-Interactive controls:
-- Slider: Quality factor Q (1 to 100)
-- Slider: Resonant frequency f₀ (100 Hz to 10 kHz)
-- Toggle: Show/hide multiple Q curves for comparison
-- Toggle: Linear/Log frequency scale
-- Display: Calculated bandwidth BW = f₀/Q
-
-Calculations displayed:
-- BW = f₀/Q
-- Lower 3dB frequency: f₁ = f₀/√(1 + 1/4Q²) - f₀/2Q
-- Upper 3dB frequency: f₂ = f₀/√(1 + 1/4Q²) + f₀/2Q
-- Damping ratio: ζ = 1/2Q
-
-Visual annotations:
-- "Sharper peak = Higher Q"
-- "Narrower bandwidth = Better selectivity"
-- 3dB = 0.707 of peak value shown
-
-Default parameters:
-- Q = 10
-- f₀ = 1 kHz
-
-Canvas layout:
-- Plot area: 600 × 350 pixels
-- Control area: 100 pixels below
-
-Implementation: p5.js
-</details>
-
 ## Pulse Response: Ringing and Transients
 
 The **pulse response** is how a circuit responds to a sudden rectangular pulse input rather than a step. This is crucial for digital circuits where signals switch between 0 and 1.
@@ -745,47 +445,6 @@ When an underdamped RLC circuit receives a pulse:
 
 <iframe src="../sims/pulse-ringing/main.html" width="100%" height="450px" scrolling="no" style="overflow: hidden;"></iframe>
 
-<details markdown="1">
-<summary>Pulse Response and Ringing</summary>
-Type: microsim
-
-Bloom Level: Apply (L3)
-Bloom Verb: demonstrate
-
-Learning Objective: Students will demonstrate how pulse width and damping affect ringing in RLC circuits.
-
-Visual elements:
-- Top plot: Input pulse signal
-- Bottom plot: Circuit response with ringing
-- Overlay showing damped oscillations
-- Pulse edges aligned between plots
-- Ringing peaks counted and labeled
-
-Interactive controls:
-- Slider: Pulse width (0.1× to 5× natural period)
-- Slider: Damping ratio ζ (0.05 to 0.9)
-- Slider: Natural frequency ω₀
-- Button: Send single pulse
-- Button: Continuous pulses
-- Display: Number of ringing cycles visible
-
-Observations highlighted:
-- Pulse width = T_d/2: "Maximum ringing - resonant excitation"
-- High ζ: "Quick settling, minimal overshoot"
-- Low ζ: "Extended ringing, many oscillations"
-
-Default parameters:
-- ζ = 0.2
-- Pulse width = T_d (one natural period)
-- ω₀ = 1000 rad/s
-
-Canvas layout:
-- Two plot areas: 600 × 175 pixels each
-- Control area: 100 pixels below
-
-Implementation: p5.js
-</details>
-
 ## Energy Exchange in RLC Circuits
 
 The oscillatory behavior of RLC circuits comes from energy continuously exchanging between the electric field of the capacitor and the magnetic field of the inductor.
@@ -812,51 +471,6 @@ With resistance:
 #### Diagram: Energy Exchange Animation
 
 <iframe src="../sims/energy-exchange/main.html" width="100%" height="500px" scrolling="no" style="overflow: hidden;"></iframe>
-
-<details markdown="1">
-<summary>Energy Exchange Animation</summary>
-Type: microsim
-
-Bloom Level: Understand (L2)
-Bloom Verb: explain
-
-Learning Objective: Students will explain how energy oscillates between the capacitor's electric field and the inductor's magnetic field in an RLC circuit.
-
-Visual elements:
-- Circuit diagram showing RLC with animated current
-- Capacitor energy bar (blue) - electric field representation
-- Inductor energy bar (red) - magnetic field representation
-- Total energy bar (gray) - decreasing over time
-- Phase indicator showing voltage and current relationship
-- Energy vs time plot showing oscillation
-
-Step-through mode for conceptual understanding:
-- Stage 1: "Capacitor fully charged" - all energy in E-field
-- Stage 2: "Current rising" - energy transferring to L
-- Stage 3: "Inductor at max current" - all energy in B-field
-- Stage 4: "Current falling" - energy returning to C (opposite polarity)
-- Stage 5: "Cycle completes" - back to initial state (with losses)
-
-Interactive controls:
-- Button: Step / Auto-animate
-- Slider: Damping (0 for ideal LC, up to 0.5)
-- Slider: Animation speed
-- Toggle: Show/hide energy plot
-- Display: Current W_C, W_L, W_total values
-
-Default parameters:
-- Light damping (ζ = 0.1) to show both oscillation and decay
-- Initial condition: Capacitor fully charged
-
-Canvas layout:
-- Circuit and energy bars: 400 × 300 pixels
-- Energy plot: 200 × 300 pixels (side)
-- Control area: 100 pixels below
-
-Instructional Rationale: Step-through mode helps students understand energy conservation and transfer without the distraction of continuous animation.
-
-Implementation: p5.js
-</details>
 
 ## Design Applications
 

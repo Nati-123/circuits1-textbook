@@ -1,4 +1,6 @@
 // Overdamped Step Response MicroSim
+// Canvas-drawn sliders (no DOM elements) for iframe compatibility
+
 // Canvas dimensions
 let canvasWidth = 710;
 let canvasHeight = 430;
@@ -19,29 +21,45 @@ let axisColor = '#333333';
 let gridColor = '#E0E0E0';
 let bgColor = '#FFFFFF';
 
+class CanvasSlider {
+  constructor(x, y, w, min, max, value, label) {
+    this.x = x; this.y = y; this.w = w;
+    this.min = min; this.max = max; this.value = value;
+    this.label = label; this.dragging = false;
+  }
+  get thumbX() { return this.x + ((this.value - this.min) / (this.max - this.min)) * this.w; }
+  display() {
+    stroke(180); strokeWeight(2); line(this.x, this.y, this.x + this.w, this.y);
+    fill('#5A3EED'); noStroke(); ellipse(this.thumbX, this.y, 14, 14);
+    fill(60); noStroke(); textSize(12); textAlign(LEFT);
+    text(this.label + ': ' + this.value.toFixed(2), this.x, this.y - 12);
+  }
+  pressed(mx, my) { if (dist(mx, my, this.thumbX, this.y) < 10) this.dragging = true; }
+  dragged(mx) {
+    if (!this.dragging) return;
+    let v = ((mx - this.x) / this.w) * (this.max - this.min) + this.min;
+    this.value = constrain(v, this.min, this.max);
+  }
+  released() { this.dragging = false; }
+}
+
 function setup() {
     const canvas = createCanvas(canvasWidth, canvasHeight);
     canvas.parent('main');
     textFont('Arial');
 
     // Damping ratio slider: zeta from 1.1 to 5.0, default 2.0
-    zetaSlider = createSlider(1.1, 5.0, 2.0, 0.01);
-    zetaSlider.position(marginLeft + 10, canvasHeight - 30);
-    zetaSlider.size(200);
-    zetaSlider.parent('main');
+    zetaSlider = new CanvasSlider(marginLeft + 10, canvasHeight - 25, 200, 1.1, 5.0, 2.0, 'Damping Ratio ζ');
 
     // Natural frequency slider: omega0 from 1 to 20, default 5
-    omegaSlider = createSlider(1, 20, 5, 0.1);
-    omegaSlider.position(marginLeft + 320, canvasHeight - 30);
-    omegaSlider.size(200);
-    omegaSlider.parent('main');
+    omegaSlider = new CanvasSlider(marginLeft + 320, canvasHeight - 25, 200, 1, 20, 5, 'Natural Freq ω₀');
 }
 
 function draw() {
     background(bgColor);
 
-    let zeta = zetaSlider.value();
-    let omega0 = omegaSlider.value();
+    let zeta = zetaSlider.value;
+    let omega0 = omegaSlider.value;
 
     // Compute roots
     let alpha = zeta * omega0;
@@ -49,7 +67,7 @@ function draw() {
     let s1 = -alpha + disc;
     let s2 = -alpha - disc;
 
-    // Time range: 0 to 5/alpha
+    // Time range: 0 to 5/(zeta*omega0)
     let tMax = 5 / alpha;
     let Vf = 1.0; // final value
 
@@ -87,7 +105,6 @@ function draw() {
     // Vertical grid lines
     let numTGrid = 8;
     let tStep = tMax / numTGrid;
-    // Round tStep to a nice number
     for (let i = 0; i <= numTGrid; i++) {
         let t = i * tStep;
         let x = map(t, 0, tMax, plotLeft, plotRight);
@@ -97,9 +114,7 @@ function draw() {
     // --- Draw axes ---
     stroke(axisColor);
     strokeWeight(1.5);
-    // X-axis
     line(plotLeft, plotBottom, plotRight, plotBottom);
-    // Y-axis
     line(plotLeft, plotTop, plotLeft, plotBottom);
 
     // --- Axis labels ---
@@ -151,7 +166,7 @@ function draw() {
 
     // --- Plot the response curve ---
     stroke(curveColor);
-    strokeWeight(2.5);
+    strokeWeight(2);
     noFill();
     beginShape();
     let numPoints = 500;
@@ -194,13 +209,25 @@ function draw() {
     text('s\u2082 = ' + nf(s2, 1, 2) + ' /s', infoX, infoY + 3.5 * lineH);
     text('\u03B1 = \u03B6\u03C9\u2080 = ' + nf(alpha, 1, 2) + ' /s', infoX, infoY + 4.5 * lineH);
 
-    // --- Slider labels ---
-    fill(axisColor);
-    textSize(12);
+    // --- Draw sliders ---
     textStyle(BOLD);
-    textAlign(LEFT, TOP);
-    text('Damping Ratio \u03B6: ' + nf(zeta, 1, 2), marginLeft + 10, canvasHeight - 48);
-    text('Natural Freq \u03C9\u2080: ' + nf(omega0, 1, 1) + ' rad/s', marginLeft + 320, canvasHeight - 48);
+    zetaSlider.display();
+    omegaSlider.display();
+}
+
+function mousePressed() {
+    zetaSlider.pressed(mouseX, mouseY);
+    omegaSlider.pressed(mouseX, mouseY);
+}
+
+function mouseDragged() {
+    zetaSlider.dragged(mouseX);
+    omegaSlider.dragged(mouseX);
+}
+
+function mouseReleased() {
+    zetaSlider.released();
+    omegaSlider.released();
 }
 
 // Utility: draw a dashed line

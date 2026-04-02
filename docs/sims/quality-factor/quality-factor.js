@@ -1,7 +1,6 @@
 // Quality Factor and Bandwidth MicroSim
-// Canvas: 710 x 480
+// Canvas: 710 x 480 — all controls drawn on canvas (no DOM elements)
 
-let sliderF0, sliderQ;
 let canvasWidth = 710;
 let canvasHeight = 480;
 
@@ -9,7 +8,7 @@ let canvasHeight = 480;
 let marginLeft = 70;
 let marginRight = 140;
 let marginTop = 50;
-let marginBottom = 60;
+let marginBottom = 80;
 
 // Fixed Q curves
 let fixedQs = [2, 5, 20, 50];
@@ -18,6 +17,30 @@ let fixedColors;
 // Frequency range for log scale
 let fMin = 10;
 let fMax = 100000;
+
+// Canvas sliders
+let sliderF0, sliderQ;
+
+class CanvasSlider {
+  constructor(x, y, w, min, max, value, label) {
+    this.x = x; this.y = y; this.w = w;
+    this.min = min; this.max = max; this.value = value;
+    this.label = label; this.dragging = false;
+  }
+  get thumbX() { return this.x + ((this.value - this.min) / (this.max - this.min)) * this.w; }
+  display() {
+    stroke(180); strokeWeight(2); line(this.x, this.y, this.x + this.w, this.y);
+    fill('#5A3EED'); noStroke(); ellipse(this.thumbX, this.y, 14, 14);
+    fill(60); noStroke(); textSize(12); textAlign(LEFT);
+    text(this.label + ': ' + this.value.toFixed(1), this.x, this.y - 12);
+  }
+  pressed(mx, my) { if (dist(mx, my, this.thumbX, this.y) < 10) this.dragging = true; }
+  dragged(mx) {
+    if (!this.dragging) return;
+    this.value = constrain(((mx - this.x) / this.w) * (this.max - this.min) + this.min, this.min, this.max);
+  }
+  released() { this.dragging = false; }
+}
 
 function setup() {
     const canvas = createCanvas(canvasWidth, canvasHeight);
@@ -31,24 +54,16 @@ function setup() {
         color(230, 160, 40)   // Q=50 orange
     ];
 
-    // Slider for f0
-    sliderF0 = createSlider(100, 10000, 1000, 10);
-    sliderF0.position(marginLeft + 10, canvasHeight - 22);
-    sliderF0.style('width', '180px');
-    sliderF0.parent('main');
-
-    // Slider for highlighted Q
-    sliderQ = createSlider(1, 100, 10, 1);
-    sliderQ.position(marginLeft + 310, canvasHeight - 22);
-    sliderQ.style('width', '180px');
-    sliderQ.parent('main');
+    let sliderY = canvasHeight - 28;
+    sliderF0 = new CanvasSlider(marginLeft + 10, sliderY, 180, 100, 10000, 1000, 'f\u2080 (Hz)');
+    sliderQ  = new CanvasSlider(marginLeft + 280, sliderY, 180, 1, 100, 10, 'Highlight Q');
 }
 
 function draw() {
     background(255);
 
-    let f0 = sliderF0.value();
-    let qHighlight = sliderQ.value();
+    let f0 = sliderF0.value;
+    let qHighlight = sliderQ.value;
 
     let plotLeft = marginLeft;
     let plotRight = canvasWidth - marginRight;
@@ -70,10 +85,10 @@ function draw() {
     strokeWeight(1);
     rect(plotLeft, plotTop, plotW, plotH);
 
-    // --- Grid and axes ---
+    // Grid and axes
     drawGrid(plotLeft, plotTop, plotW, plotH, f0);
 
-    // --- Draw -3dB dashed line ---
+    // -3dB dashed line
     let y3dB = plotTop + plotH * (1 - 0.707);
     drawDashedLine(plotLeft, y3dB, plotRight, y3dB, color(120, 120, 120), 1.5);
     fill(120);
@@ -82,16 +97,16 @@ function draw() {
     textAlign(LEFT, BOTTOM);
     text('-3 dB (0.707)', plotRight + 4, y3dB + 4);
 
-    // --- Draw fixed Q curves ---
+    // Draw fixed Q curves
     for (let i = 0; i < fixedQs.length; i++) {
         drawCurve(fixedQs[i], f0, plotLeft, plotTop, plotW, plotH, fixedColors[i], 1.5);
     }
 
-    // --- Draw highlighted Q curve (thick) ---
-    let highlightColor = color(90, 62, 237); // #5A3EED
+    // Draw highlighted Q curve (thick purple)
+    let highlightColor = color(128, 0, 128);
     drawCurve(qHighlight, f0, plotLeft, plotTop, plotW, plotH, highlightColor, 3.5);
 
-    // --- Draw bandwidth markers for highlighted Q ---
+    // Bandwidth markers for highlighted Q
     let bw = f0 / qHighlight;
     let fLow = f0 * (sqrt(1 + 1 / (4 * qHighlight * qHighlight)) - 1 / (2 * qHighlight));
     let fHigh = f0 * (sqrt(1 + 1 / (4 * qHighlight * qHighlight)) + 1 / (2 * qHighlight));
@@ -100,13 +115,9 @@ function draw() {
     let xHigh = freqToX(fHigh, plotLeft, plotW);
 
     if (xLow >= plotLeft && xLow <= plotRight) {
-        stroke(highlightColor);
-        strokeWeight(1.5);
         drawDashedLine(xLow, y3dB, xLow, plotBottom, highlightColor, 1.2);
     }
     if (xHigh >= plotLeft && xHigh <= plotRight) {
-        stroke(highlightColor);
-        strokeWeight(1.5);
         drawDashedLine(xHigh, y3dB, xHigh, plotBottom, highlightColor, 1.2);
     }
 
@@ -129,7 +140,7 @@ function draw() {
         text('BW', (xLow + xHigh) / 2, yArrow + 2);
     }
 
-    // --- Axis labels ---
+    // Axis labels
     fill(0);
     noStroke();
     textSize(12);
@@ -144,7 +155,7 @@ function draw() {
     text('Normalized Response', 0, 0);
     pop();
 
-    // --- Legend ---
+    // Legend
     let legendX = plotRight + 10;
     let legendY = plotTop + 10;
     textSize(11);
@@ -166,7 +177,7 @@ function draw() {
         text('Q = ' + fixedQs[i], legendX + 25, ly);
     }
 
-    // Highlighted Q info
+    // Highlighted Q info in legend
     let infoY = legendY + 18 + fixedQs.length * 18 + 14;
     stroke(highlightColor);
     strokeWeight(3.5);
@@ -174,21 +185,17 @@ function draw() {
     noStroke();
     fill(highlightColor);
     textStyle(BOLD);
-    text('Q = ' + qHighlight, legendX + 25, infoY);
+    text('Q = ' + nf(qHighlight, 0, 1), legendX + 25, infoY);
     textStyle(NORMAL);
 
     fill(60);
     textSize(10);
     text('BW = ' + nf(bw, 0, 1) + ' Hz', legendX, infoY + 18);
-    text('f\u2080 = ' + f0 + ' Hz', legendX, infoY + 34);
+    text('f\u2080 = ' + nf(f0, 0, 1) + ' Hz', legendX, infoY + 34);
 
-    // --- Slider labels ---
-    fill(0);
-    noStroke();
-    textSize(11);
-    textAlign(LEFT, CENTER);
-    text('f\u2080 = ' + f0 + ' Hz', marginLeft + 10, canvasHeight - 34);
-    text('Q = ' + qHighlight, marginLeft + 310, canvasHeight - 34);
+    // Draw sliders
+    sliderF0.display();
+    sliderQ.display();
 }
 
 function drawCurve(Q, f0, plotLeft, plotTop, plotW, plotH, col, weight) {
@@ -210,7 +217,6 @@ function drawCurve(Q, f0, plotLeft, plotTop, plotW, plotH, col, weight) {
         let x = plotLeft + t * plotW;
         let y = plotTop + plotH * (1 - H);
 
-        // Clip to plot area
         if (x >= plotLeft && x <= plotRight && y >= plotTop && y <= plotBottom) {
             vertex(x, y);
         }
@@ -294,4 +300,19 @@ function drawDashedLine(x1, y1, x2, y2, col, weight) {
         let sy = y1 + (dashLen + gapLen) * i * dy;
         line(sx, sy, sx + dashLen * dx, sy + dashLen * dy);
     }
+}
+
+function mousePressed() {
+    sliderF0.pressed(mouseX, mouseY);
+    sliderQ.pressed(mouseX, mouseY);
+}
+
+function mouseDragged() {
+    sliderF0.dragged(mouseX);
+    sliderQ.dragged(mouseX);
+}
+
+function mouseReleased() {
+    sliderF0.released();
+    sliderQ.released();
 }

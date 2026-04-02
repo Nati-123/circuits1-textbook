@@ -1,7 +1,6 @@
 // Pulse Response and Ringing MicroSim
-// Shows input pulse and RLC underdamped output with ringing
+// Canvas-drawn sliders (no DOM elements) for iframe compatibility
 
-let sliderZeta, sliderOmega, sliderPulse;
 let canvasWidth = 710;
 let canvasHeight = 430;
 
@@ -19,6 +18,30 @@ let plotWidth;
 let tMax = 4.0;
 let numPoints = 600;
 
+// Sliders
+let sliderZeta, sliderOmega, sliderPulse;
+
+class CanvasSlider {
+  constructor(x, y, w, min, max, value, label) {
+    this.x = x; this.y = y; this.w = w;
+    this.min = min; this.max = max; this.value = value;
+    this.label = label; this.dragging = false;
+  }
+  get thumbX() { return this.x + ((this.value - this.min) / (this.max - this.min)) * this.w; }
+  display() {
+    stroke(180); strokeWeight(2); line(this.x, this.y, this.x + this.w, this.y);
+    fill('#5A3EED'); noStroke(); ellipse(this.thumbX, this.y, 14, 14);
+    fill(60); noStroke(); textSize(12); textAlign(LEFT);
+    text(this.label + ': ' + this.value.toFixed(2), this.x, this.y - 12);
+  }
+  pressed(mx, my) { if (dist(mx, my, this.thumbX, this.y) < 10) this.dragging = true; }
+  dragged(mx) {
+    if (!this.dragging) return;
+    this.value = constrain(((mx - this.x) / this.w) * (this.max - this.min) + this.min, this.min, this.max);
+  }
+  released() { this.dragging = false; }
+}
+
 function setup() {
     const canvas = createCanvas(canvasWidth, canvasHeight);
     canvas.parent('main');
@@ -27,27 +50,17 @@ function setup() {
     bottomPlotY = marginTop + topPlotHeight + plotGap;
     plotWidth = canvasWidth - marginLeft - marginRight;
 
-    // Sliders
+    let sliderW = 150;
+    let sliderY = canvasHeight - 18;
     let sliderX = marginLeft;
-    let sliderW = 140;
-    let sliderY = canvasHeight - 22;
+    let gap = 70;
 
-    sliderZeta = createSlider(0.05, 0.5, 0.1, 0.01);
-    sliderZeta.position(sliderX, sliderY);
-    sliderZeta.size(sliderW);
-
-    sliderOmega = createSlider(5, 30, 10, 0.5);
-    sliderOmega.position(sliderX + sliderW + 70, sliderY);
-    sliderOmega.size(sliderW);
-
-    sliderPulse = createSlider(0.1, 2.0, 0.5, 0.01);
-    sliderPulse.position(sliderX + 2 * (sliderW + 70), sliderY);
-    sliderPulse.size(sliderW);
+    sliderZeta = new CanvasSlider(sliderX, sliderY, sliderW, 0.05, 0.5, 0.1, '\u03B6');
+    sliderOmega = new CanvasSlider(sliderX + sliderW + gap, sliderY, sliderW, 5, 30, 10, '\u03C9\u2080');
+    sliderPulse = new CanvasSlider(sliderX + 2 * (sliderW + gap), sliderY, sliderW, 0.1, 2.0, 0.5, 'pw (s)');
 }
 
 function stepResponse(t, zeta, omega0) {
-    // Underdamped step response:
-    // v(t) = 1 - exp(-zeta*omega0*t) / sqrt(1-zeta^2) * sin(wd*t + acos(zeta))
     if (t <= 0) return 0;
     let wd = omega0 * sqrt(1 - zeta * zeta);
     let phi = acos(zeta);
@@ -55,11 +68,11 @@ function stepResponse(t, zeta, omega0) {
 }
 
 function draw() {
-    background(245);
+    background(255);
 
-    let zeta = sliderZeta.value();
-    let omega0 = sliderOmega.value();
-    let pw = sliderPulse.value();
+    let zeta = sliderZeta.value;
+    let omega0 = sliderOmega.value;
+    let pw = sliderPulse.value;
 
     // Title
     fill(0);
@@ -70,18 +83,6 @@ function draw() {
     text('Pulse Response and Ringing', canvasWidth / 2, 8);
     textStyle(NORMAL);
 
-    // Slider labels
-    textSize(12);
-    textAlign(LEFT, CENTER);
-    let sliderY = canvasHeight - 13;
-    let sliderW = 140;
-    let sliderX = marginLeft;
-
-    fill(80);
-    text('\u03B6 = ' + zeta.toFixed(2), sliderX + sliderW + 4, sliderY);
-    text('\u03C9\u2080 = ' + omega0.toFixed(1), sliderX + sliderW + 70 + sliderW + 4, sliderY);
-    text('pw = ' + pw.toFixed(2) + ' s', sliderX + 2 * (sliderW + 70) + sliderW + 4, sliderY);
-
     // Compute signals
     let tVals = [];
     let pulse = [];
@@ -91,7 +92,6 @@ function draw() {
         let t = (i / (numPoints - 1)) * tMax;
         tVals.push(t);
         pulse.push((t >= 0 && t <= pw) ? 1 : 0);
-        // Superposition: step at t=0 minus step at t=pw
         let v = stepResponse(t, zeta, omega0) - stepResponse(t - pw, zeta, omega0);
         response.push(v);
     }
@@ -102,7 +102,6 @@ function draw() {
         if (response[i] < rMin) rMin = response[i];
         if (response[i] > rMax) rMax = response[i];
     }
-    // Add padding
     let rPad = (rMax - rMin) * 0.15;
     if (rPad < 0.1) rPad = 0.1;
     rMin -= rPad;
@@ -175,6 +174,7 @@ function draw() {
     text('Output Response', marginLeft + 5, bottomPlotY + 14);
 
     // Parameter display box
+    let wd = omega0 * sqrt(1 - zeta * zeta);
     fill(255, 255, 255, 210);
     stroke(180);
     strokeWeight(1);
@@ -187,8 +187,30 @@ function draw() {
     textAlign(LEFT, TOP);
     text('\u03B6 = ' + zeta.toFixed(2) + '   \u03C9\u2080 = ' + omega0.toFixed(1) + ' rad/s', boxX + 8, boxY + 6);
     text('Pulse width = ' + pw.toFixed(2) + ' s', boxX + 8, boxY + 21);
-    let wd = omega0 * sqrt(1 - zeta * zeta);
     text('\u03C9d = ' + wd.toFixed(2) + ' rad/s', boxX + 8, boxY + 36);
+
+    // Draw sliders
+    sliderZeta.display();
+    sliderOmega.display();
+    sliderPulse.display();
+}
+
+function mousePressed() {
+    sliderZeta.pressed(mouseX, mouseY);
+    sliderOmega.pressed(mouseX, mouseY);
+    sliderPulse.pressed(mouseX, mouseY);
+}
+
+function mouseDragged() {
+    sliderZeta.dragged(mouseX);
+    sliderOmega.dragged(mouseX);
+    sliderPulse.dragged(mouseX);
+}
+
+function mouseReleased() {
+    sliderZeta.released();
+    sliderOmega.released();
+    sliderPulse.released();
 }
 
 function mapVal(v, inMin, inMax, outMin, outMax) {
@@ -206,14 +228,12 @@ function drawGrid(x, y, w, h, tMax, vMin, vMax) {
     stroke(220);
     strokeWeight(0.5);
 
-    // Vertical grid lines (time)
     let numVLines = 8;
     for (let i = 1; i < numVLines; i++) {
         let gx = x + (i / numVLines) * w;
         line(gx, y, gx, y + h);
     }
 
-    // Horizontal grid lines
     let numHLines = 4;
     for (let i = 1; i < numHLines; i++) {
         let gy = y + (i / numHLines) * h;
@@ -234,7 +254,6 @@ function drawYAxis(x, y, h, vMin, vMax, label) {
         text(v.toFixed(1), x - 5, ty);
     }
 
-    // Label
     push();
     translate(x - 50, y + h / 2);
     rotate(-HALF_PI);

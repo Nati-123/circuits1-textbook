@@ -1,7 +1,7 @@
 // Series RLC Resonance Explorer
 // MicroSim for visualizing frequency response of a series RLC circuit
+// Uses canvas-drawn sliders (no DOM elements) for iframe compatibility
 
-let sliderR, sliderL, sliderC;
 let canvasWidth = 710;
 let canvasHeight = 480;
 
@@ -11,40 +11,52 @@ let plotRight = 620;
 let plotTop = 60;
 let plotBottom = 380;
 
+// Canvas sliders
+let sliderR, sliderL, sliderC;
+
+class CanvasSlider {
+  constructor(x, y, w, min, max, value, label) {
+    this.x = x; this.y = y; this.w = w;
+    this.min = min; this.max = max; this.value = value;
+    this.label = label; this.dragging = false;
+  }
+  get thumbX() { return this.x + ((this.value - this.min) / (this.max - this.min)) * this.w; }
+  display() {
+    stroke(180); strokeWeight(2); line(this.x, this.y, this.x + this.w, this.y);
+    fill('#5A3EED'); noStroke(); ellipse(this.thumbX, this.y, 14, 14);
+    fill(60); noStroke(); textSize(12); textAlign(LEFT);
+    text(this.label + ': ' + this.value.toFixed(2), this.x, this.y - 12);
+  }
+  pressed(mx, my) { if (dist(mx, my, this.thumbX, this.y) < 10) this.dragging = true; }
+  dragged(mx) {
+    if (!this.dragging) return;
+    this.value = constrain(((mx - this.x) / this.w) * (this.max - this.min) + this.min, this.min, this.max);
+  }
+  released() { this.dragging = false; }
+}
+
 function setup() {
     const canvas = createCanvas(canvasWidth, canvasHeight);
     canvas.parent('main');
     textFont('Arial');
 
-    // Slider positions
-    let sliderX = 100;
-    let sliderY = 410;
-    let sliderSpacing = 210;
+    let sliderY = 430;
     let sliderW = 150;
+    let sliderX = 100;
+    let sliderSpacing = 210;
 
-    // R slider: 1 to 200 ohms, default 10
-    sliderR = createSlider(1, 200, 10, 1);
-    sliderR.position(sliderX, sliderY);
-    sliderR.size(sliderW);
-
-    // L slider: 1 to 100 mH, default 10
-    sliderL = createSlider(1, 100, 10, 1);
-    sliderL.position(sliderX + sliderSpacing, sliderY);
-    sliderL.size(sliderW);
-
-    // C slider: 0.1 to 10 uF, default 1 (store as tenths to allow 0.1 step)
-    sliderC = createSlider(1, 100, 10, 1);
-    sliderC.position(sliderX + 2 * sliderSpacing, sliderY);
-    sliderC.size(sliderW);
+    sliderR = new CanvasSlider(sliderX, sliderY, sliderW, 1, 200, 10, 'R (\u03A9)');
+    sliderL = new CanvasSlider(sliderX + sliderSpacing, sliderY, sliderW, 1, 100, 10, 'L (mH)');
+    sliderC = new CanvasSlider(sliderX + 2 * sliderSpacing, sliderY, sliderW, 0.1, 10, 1, 'C (\u00B5F)');
 }
 
 function draw() {
-    background(245);
+    background(255);
 
-    let R = sliderR.value();           // Ohms
-    let L = sliderL.value() / 1000;    // Convert mH to H
-    let C_val = sliderC.value() / 10;  // Convert slider to uF
-    let C = C_val * 1e-6;              // Convert uF to F
+    let R = sliderR.value;                // Ohms
+    let L = sliderL.value / 1000;         // Convert mH to H
+    let C_val = sliderC.value;            // uF
+    let C = C_val * 1e-6;                 // Convert uF to F
 
     // Resonant frequency
     let f0 = 1 / (TWO_PI * sqrt(L * C));
@@ -109,7 +121,6 @@ function draw() {
     let fLow = null, fHigh = null;
     for (let i = 1; i <= numPoints; i++) {
         if (fLow === null && normMags[i] >= dB3Level && normMags[i - 1] < dB3Level) {
-            // Interpolate
             let t = (dB3Level - normMags[i - 1]) / (normMags[i] - normMags[i - 1]);
             fLow = freqs[i - 1] + t * (freqs[i] - freqs[i - 1]);
         }
@@ -124,22 +135,17 @@ function draw() {
         let xLow = map(log10(fLow), logFMin, logFMax, plotLeft, plotRight);
         let xHigh = map(log10(fHigh), logFMin, logFMax, plotLeft, plotRight);
 
-        // Markers at half-power points
         stroke(180, 50, 50);
         strokeWeight(2);
-        drawingContext.setLineDash([]);
-        // Small vertical ticks at -3dB crossings
         line(xLow, dB3Y - 6, xLow, dB3Y + 6);
         line(xHigh, dB3Y - 6, xHigh, dB3Y + 6);
 
-        // Horizontal arrow between them
         stroke(180, 50, 50, 120);
         strokeWeight(1);
         drawingContext.setLineDash([4, 3]);
         line(xLow, dB3Y, xHigh, dB3Y);
         drawingContext.setLineDash([]);
 
-        // BW label between markers
         noStroke();
         fill(180, 50, 50);
         textSize(10);
@@ -178,16 +184,9 @@ function draw() {
     textAlign(LEFT, TOP);
     text('f\u2080 = ' + formatFreq(f0), xF0 + 6, plotTop + 4);
 
-    // Display parameters
-    noStroke();
-    fill(40);
-    textSize(13);
-    textAlign(LEFT, TOP);
-    let infoX = plotLeft + 4;
-    let infoY = plotTop + 2;
-
     // Info box background
     fill(255, 255, 255, 200);
+    noStroke();
     rect(plotRight - 175, plotTop + 2, 172, 60, 4);
 
     fill(40);
@@ -198,22 +197,6 @@ function draw() {
     text('f\u2080 = ' + formatFreq(f0), dispX, dispY);
     text('Q = ' + Q.toFixed(2), dispX, dispY + 17);
     text('BW = ' + formatFreq(BW), dispX, dispY + 34);
-
-    // Slider labels
-    fill(0);
-    textSize(13);
-    textAlign(CENTER, TOP);
-
-    let sliderX = 100;
-    let sliderSpacing = 210;
-    let sliderW = 150;
-
-    // R label
-    text('R = ' + R + ' \u03A9', sliderX + sliderW / 2, 430);
-    // L label
-    text('L = ' + sliderL.value() + ' mH', sliderX + sliderSpacing + sliderW / 2, 430);
-    // C label
-    text('C = ' + C_val.toFixed(1) + ' \u00B5F', sliderX + 2 * sliderSpacing + sliderW / 2, 430);
 
     // Axis labels
     fill(0);
@@ -227,6 +210,11 @@ function draw() {
     textAlign(CENTER, BOTTOM);
     text('Normalized |I|', 0, 0);
     pop();
+
+    // Draw sliders
+    sliderR.display();
+    sliderL.display();
+    sliderC.display();
 }
 
 function drawGrid(logFMin, logFMax, f0) {
@@ -270,7 +258,6 @@ function drawGrid(logFMin, logFMax, f0) {
             }
             line(x, plotTop, x, plotBottom);
 
-            // Label only at decade marks
             if (k === 1) {
                 noStroke();
                 fill(120);
@@ -278,6 +265,24 @@ function drawGrid(logFMin, logFMax, f0) {
             }
         }
     }
+}
+
+function mousePressed() {
+    sliderR.pressed(mouseX, mouseY);
+    sliderL.pressed(mouseX, mouseY);
+    sliderC.pressed(mouseX, mouseY);
+}
+
+function mouseDragged() {
+    sliderR.dragged(mouseX);
+    sliderL.dragged(mouseX);
+    sliderC.dragged(mouseX);
+}
+
+function mouseReleased() {
+    sliderR.released();
+    sliderL.released();
+    sliderC.released();
 }
 
 function log10(x) {
