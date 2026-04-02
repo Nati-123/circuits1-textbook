@@ -210,10 +210,9 @@ The natural frequency depends only on the energy storage elements (L and C), not
 <label style="font-size:0.9em;">C (μF): <input type="range" id="nfC" min="0.01" max="100" value="1" step="0.01" oninput="updateNF()"> <strong id="nfCval">1.00</strong></label>
 </div>
 <div id="nfResult" style="padding:10px;background:#F8F6FF;border-radius:8px;margin-bottom:8px;font-size:0.95em;"></div>
-<canvas id="nfCanvas" width="690" height="250"></canvas>
+<div id="nfWrap" style="position:relative;height:260px;"></div>
 </div>
 <script>
-var nfChart=null;
 function updateNF(){
   var Lm=+document.getElementById('nfL').value,Cu=+document.getElementById('nfC').value;
   document.getElementById('nfLval').textContent=Lm.toFixed(1);
@@ -225,8 +224,10 @@ function updateNF(){
     '<b>L</b> = '+Lm+' mH = '+(L*1000).toFixed(3)+' × 10⁻³ H &nbsp;|&nbsp; <b>C</b> = '+Cu+' μF = '+(C*1e6).toFixed(4)+' × 10⁻⁶ F';
   var N=200,tMax=3*T,labels=[],data=[];
   for(var i=0;i<=N;i++){var t=i*tMax/N;labels.push((t*1000).toFixed(2));data.push(Math.cos(w0*t));}
-  if(nfChart){nfChart.destroy();nfChart=null;}
-  nfChart=new Chart(document.getElementById('nfCanvas'),{type:'line',data:{labels:labels,datasets:[{label:'cos(ω₀t)',data:data,borderColor:'#5A3EED',borderWidth:2,pointRadius:0,fill:false}]},options:{responsive:true,animation:{duration:0},plugins:{title:{display:true,text:'Undamped Oscillation at f₀ = '+f0.toFixed(1)+' Hz  (T = '+(T>=0.001?(T*1000).toFixed(2)+' ms':(T*1e6).toFixed(1)+' μs')+')',font:{size:13},color:'#333'},legend:{display:false}},scales:{x:{title:{display:true,text:'Time (ms)'},ticks:{maxTicksLimit:8,font:{size:10}}},y:{title:{display:true,text:'Amplitude'},min:-1.2,max:1.2}}}});
+  var wrap=document.getElementById('nfWrap');
+  wrap.innerHTML='<canvas></canvas>';
+  var cv=wrap.querySelector('canvas');
+  new Chart(cv,{type:'line',data:{labels:labels,datasets:[{label:'cos(ω₀t)',data:data,borderColor:'#5A3EED',borderWidth:2,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{title:{display:true,text:'Undamped Oscillation at f₀ = '+f0.toFixed(1)+' Hz  (T = '+(T>=0.001?(T*1000).toFixed(2)+' ms':(T*1e6).toFixed(1)+' μs')+')',font:{size:13},color:'#333'},legend:{display:false}},scales:{x:{title:{display:true,text:'Time (ms)'},ticks:{maxTicksLimit:8,font:{size:10}}},y:{title:{display:true,text:'Amplitude'},min:-1.2,max:1.2}}}});
 }
 updateNF();
 </script>
