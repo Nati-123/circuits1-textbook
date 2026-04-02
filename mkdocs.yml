@@ -35,16 +35,27 @@ extra_css: []
 nav:
   - Home: index.md
   - Chapters:
-    - Chapter 1: chapters/ch1.md
-    - Chapter 2: chapters/ch2.md
-    - Chapter 3:
+    - Chapter 1 - Electric Charge and Basic Quantities: chapters/ch1.md
+    - Chapter 2 - Ohm's Law and Basic Configurations: chapters/ch2.md
+    - Chapter 3 - Kirchhoff's Laws and Circuit Topology:
       - Content: chapters/ch3.md
       - Quiz: chapters/ch3-quiz.md
       - Problems: chapters/ch3-problems.md
       - Glossary: chapters/ch3-glossary.md
       - References: chapters/ch3-references.md
-    - Chapter 4: chapters/ch4.md
-    - Chapter 7 - Second-Order RLC Circuits:
-      - Content: chapters/ch7.md
-      - RLC Circuit Simulator: sims/rlc-circuit/index.md
-      - Natural Frequency Calculator: sims/natural-frequency-calculator/index.md
+    - Chapter 4 - DC Circuit Analysis Methods: chapters/ch4.md
+    - Chapter 5 - Passive Components: chapters/ch5.md
+    - Chapter 6 - Transient Analysis RC and RL: chapters/ch6.md
+    - Chapter 7 - Second-Order RLC Circuits: chapters/ch7.md
+    - Chapter 8 - AC Signals and Sinusoidal Waveforms: chapters/ch8.md
+    - Chapter 9 - Phasors and Complex Impedance: chapters/ch9.md
+    - Chapter 10 - AC Power Analysis: chapters/ch10.md
+    - Chapter 11 - Frequency Response and Bode Plots: chapters/ch11.md
+    - Chapter 12 - Filters and Resonance: chapters/ch12.md
+    - Chapter 13 - Operational Amplifiers: chapters/ch13.md
+    - Chapter 14 - Signal Analysis and Fourier Series: chapters/ch14.md
+    - Chapter 15 - Audio Applications and Amplifiers: chapters/ch15.md
+    - Chapter 16 - Laboratory Measurement Techniques: chapters/ch16.md
+  - MicroSims:
+    - RLC Circuit Simulator: sims/rlc-circuit/index.md
+    - Natural Frequency Calculator: sims/natural-frequency-calculator/index.md
