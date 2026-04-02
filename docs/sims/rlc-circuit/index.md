@@ -1,71 +1,64 @@
 ---
-title: RLC Series Circuit Transient Response MicroSim
-description: Interactive simulation of a series RLC circuit showing overdamped, critically damped, and underdamped step responses with real-time Vc and IL graphs.
+title: Series vs Parallel RLC Comparison MicroSim
+description: Interactive comparison of series and parallel RLC circuit step responses showing underdamped, critically damped, and overdamped behavior side by side.
 ---
 
-# RLC Series Circuit Transient Response MicroSim
+# Series vs Parallel RLC Comparison MicroSim
 
-<iframe src="main.html" width="100%" height="660px" scrolling="no"></iframe>
+<iframe src="main.html" width="720" height="660px" scrolling="no"></iframe>
 
 **Copy this iframe to your website:**
 
 ```html
-<iframe src="https://dmccreary.github.io/circuits/sims/rlc-circuit/main.html" width="100%" height="660px" scrolling="no"></iframe>
+<iframe src="https://dmccreary.github.io/circuits/sims/rlc-circuit/main.html" width="720" height="660px" scrolling="no"></iframe>
 ```
 
 [Run the RLC Circuit MicroSim in fullscreen](main.html){ .md-button .md-button--primary }
 
 ## Description
 
-This MicroSim visualizes the second-order transient response of a series RLC circuit. When the switch closes, a DC source charges a capacitor through a resistor and inductor. Depending on the resistance, the response can be **underdamped** (oscillating), **critically damped** (fastest non-oscillating), or **overdamped** (sluggish, exponential).
+This MicroSim compares the step responses of **series** and **parallel** RLC circuits side by side. Both circuits share the same R, L, and C values but have different damping characteristics because their neper frequencies differ:
 
-**Key Parameters:**
+- **Series**: \(\alpha_s = \frac{R}{2L}\) — increasing R increases damping
+- **Parallel**: \(\alpha_p = \frac{1}{2RC}\) — increasing R decreases damping
 
-| Parameter | Formula | Description |
-|-----------|---------|-------------|
-| Neper frequency | \(\alpha = \frac{R}{2L}\) | Controls envelope decay rate |
-| Natural frequency | \(\omega_0 = \frac{1}{\sqrt{LC}}\) | Undamped oscillation frequency |
-| Damped frequency | \(\omega_d = \sqrt{\omega_0^2 - \alpha^2}\) | Actual oscillation frequency |
-| Critical resistance | \(R_{crit} = 2\sqrt{L/C}\) | Boundary between damped/underdamped |
+Both share the same natural frequency \(\omega_0 = \frac{1}{\sqrt{LC}}\).
 
 **Damping Conditions:**
 
 | Condition | Response |
 |-----------|----------|
-| \(R < R_{crit}\) (α < ω₀) | Underdamped — Vc overshoots and oscillates |
-| \(R = R_{crit}\) (α = ω₀) | Critically damped — fastest rise without overshoot |
-| \(R > R_{crit}\) (α > ω₀) | Overdamped — slow exponential rise, no oscillation |
+| \(\zeta < 1\) (α < ω₀) | Underdamped — oscillates around final value |
+| \(\zeta = 1\) (α = ω₀) | Critically damped — fastest rise without overshoot |
+| \(\zeta > 1\) (α > ω₀) | Overdamped — slow exponential rise, no oscillation |
 
 **Interactive Features:**
 
-- **Resistance Slider**: Sweep from 0Ω through critical damping to overdamped
-- **Inductance & Capacitance Sliders**: Change natural frequency ω₀
-- **Damping Info Box**: Live display of α, ω₀, ωd, R_crit, and damping type
-- **Animated Electrons**: Flow speed proportional to current magnitude
-- **Capacitor Fill**: Visual charge level indicator
-- **Inductor Glow**: Blue glow proportional to stored magnetic energy
+- **R Slider** (1-200 Ω): Changes damping — note opposite effects on series vs parallel
+- **L Slider** (1-100 mH): Changes natural frequency and series damping
+- **C Slider** (1-100 µF): Changes natural frequency and parallel damping
+- **Info Panel**: Live display of α, ζ, ω₀, and damping type for both configurations
 
 ### How to Use
 
-1. Click **Start** — switch closes, circuit starts charging with default R=20Ω (underdamped)
-2. Observe Vc overshoot above Vs and IL oscillations in the graphs
-3. Reset, then drag the **R slider** to R_crit (shown in the info box) — see critically damped response
-4. Keep increasing R past R_crit — observe overdamped, sluggish response
-5. Change L and C to shift the natural frequency ω₀
+1. With defaults (R=20Ω, L=100mH, C=100µF), observe that series is underdamped while parallel may be overdamped (or vice versa)
+2. Drag the **R slider** and watch how series and parallel responses change in opposite directions
+3. Find the R value where both circuits are critically damped — they will generally differ
+4. Change L and C to shift the natural frequency ω₀ (shared by both)
 
-## Technical Notes
+## Physics
 
-The simulation uses numerical integration (Euler method with 20 sub-steps per frame):
-
-\[
-\frac{dI_L}{dt} = \frac{V_s - RI_L - V_C}{L}
-\]
+**Series RLC** (capacitor voltage, voltage source input):
 
 \[
-\frac{dV_C}{dt} = \frac{I_L}{C}
+V_c(t) = V_s \left(1 - \frac{1}{\sqrt{1-\zeta_s^2}} e^{-\alpha_s t} \sin(\omega_d t + \varphi)\right) \quad \text{(underdamped)}
 \]
 
-Animation speed scales with the natural period \(T_0 = 2\pi/\omega_0\), so one natural period takes approximately one real second regardless of component values.
+**Parallel RLC** (voltage across parallel combination, current source input):
+
+\[
+v(t) = I_s R \left(1 - \frac{1}{\sqrt{1-\zeta_p^2}} e^{-\alpha_p t} \sin(\omega_d t + \varphi)\right) \quad \text{(underdamped)}
+\]
 
 ## References
 
