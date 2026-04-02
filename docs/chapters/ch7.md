@@ -2,12 +2,6 @@
 
 # Chapter 7 — Second-Order Circuits and RLC Behavior
 
-<h2 style="color: #5A3EED !important; border-bottom: 2px solid #5A3EED; padding-bottom: 0.3rem; font-weight: 700; margin-top: 2rem;">Summary</h2>
-
-<div class="summary-box" markdown>
-<p>This chapter extends transient analysis to second-order circuits containing resistors, inductors, and capacitors (RLC). Students will learn how these circuits can exhibit oscillatory behavior and how the damping ratio determines whether the response is overdamped, underdamped, or critically damped. The chapter introduces the natural frequency concept and analyzes both series and parallel RLC configurations. Understanding second-order systems prepares students for analyzing resonant circuits and filters.</p>
-</div>
-
 <h2 style="color: #5A3EED !important; border-bottom: 2px solid #5A3EED; padding-bottom: 0.3rem; font-weight: 700; margin-top: 2rem;">Concepts Covered</h2>
 
 <div class="concepts-box" markdown>
@@ -112,7 +106,7 @@ Notice that the undamped natural frequency \(\omega_0\) is the same for both con
 
 #### Diagram: Series vs Parallel RLC Configuration
 
-<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px; margin:1rem 0;">
+<div class="msim-box"><button class="msim-btn" onclick="toggleFS(this)">⛶ Fullscreen</button>
 <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
 <label style="font-size:0.9em;">R (Ω): <input type="range" id="rlcR" min="1" max="200" value="20" step="1" oninput="drawRLC()"><strong id="rlcRv">20</strong></label>
 <label style="font-size:0.9em;">L (mH): <input type="range" id="rlcL" min="1" max="200" value="100" step="1" oninput="drawRLC()"><strong id="rlcLv">100</strong></label>
@@ -122,6 +116,16 @@ Notice that the undamped natural frequency \(\omega_0\) is the same for both con
 <div id="rlcInfo" style="font-size:0.9em;margin-top:6px;padding:8px;background:#F8F6FF;border-radius:6px;"></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+.msim-box{background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:12px;margin:1rem 0;position:relative;transition:all 0.3s ease;}
+.msim-box.msim-fs{position:fixed!important;top:0;left:0;width:100vw!important;height:100vh!important;z-index:9999;border-radius:0;overflow-y:auto;padding:20px 30px;box-sizing:border-box;}
+.msim-btn{position:absolute;top:8px;right:8px;padding:4px 12px;border:1px solid #5A3EED;border-radius:4px;background:#F8F6FF;color:#5A3EED;cursor:pointer;font-size:0.8em;font-weight:600;z-index:10;}
+.msim-btn:hover{background:#5A3EED;color:#fff;}
+.msim-box.msim-fs .msim-btn{position:fixed;top:12px;right:12px;}
+</style>
+<script>
+function toggleFS(btn){var box=btn.closest('.msim-box');box.classList.toggle('msim-fs');btn.textContent=box.classList.contains('msim-fs')?'✕ Back to Doc':'⛶ Fullscreen';}
+</script>
 <script>
 var rlcChart=null;
 function stepResp(alpha,w0,t){
@@ -200,7 +204,7 @@ The natural frequency depends only on the energy storage elements (L and C), not
 
 #### Diagram: Natural Frequency Calculator
 
-<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px; margin:1rem 0;">
+<div class="msim-box"><button class="msim-btn" onclick="toggleFS(this)">⛶ Fullscreen</button>
 <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px;">
 <label style="font-size:0.9em;">L (mH): <input type="range" id="nfL" min="0.1" max="100" value="10" step="0.1" oninput="updateNF()"> <strong id="nfLval">10.0</strong></label>
 <label style="font-size:0.9em;">C (μF): <input type="range" id="nfC" min="0.01" max="100" value="1" step="0.01" oninput="updateNF()"> <strong id="nfCval">1.00</strong></label>
@@ -219,12 +223,10 @@ function updateNF(){
     '<b>Formula:</b> ω₀ = 1/√(LC) = 1/√('+(L*C).toExponential(3)+') = <span style="color:#5A3EED;font-size:1.15em"><b>'+w0.toFixed(1)+' rad/s</b></span><br>'+
     '<b>f₀</b> = ω₀/(2π) = <span style="color:#D4A017;font-size:1.15em"><b>'+f0.toFixed(1)+' Hz</b></span> &nbsp;|&nbsp; <b>T</b> = '+(T>=0.001?(T*1000).toFixed(3)+' ms':T>=1e-6?(T*1e6).toFixed(2)+' μs':(T*1e9).toFixed(1)+' ns')+'<br>'+
     '<b>L</b> = '+Lm+' mH = '+(L*1000).toFixed(3)+' × 10⁻³ H &nbsp;|&nbsp; <b>C</b> = '+Cu+' μF = '+(C*1e6).toFixed(4)+' × 10⁻⁶ F';
-  // Plot 3 periods of oscillation
   var N=200,tMax=3*T,labels=[],data=[];
   for(var i=0;i<=N;i++){var t=i*tMax/N;labels.push((t*1000).toFixed(2));data.push(Math.cos(w0*t));}
-  var ds=[{label:'cos(ω₀t) — undamped oscillation',data:data,borderColor:'#5A3EED',borderWidth:2,pointRadius:0,fill:false}];
-  if(nfChart){nfChart.data.labels=labels;nfChart.data.datasets=ds;nfChart.options.plugins.title.text='Undamped Oscillation at f₀ = '+f0.toFixed(1)+' Hz';nfChart.update();}
-  else{nfChart=new Chart(document.getElementById('nfCanvas'),{type:'line',data:{labels:labels,datasets:ds},options:{responsive:true,animation:{duration:0},plugins:{title:{display:true,text:'Undamped Oscillation at f₀ = '+f0.toFixed(1)+' Hz',font:{size:13},color:'#333'},legend:{display:false}},scales:{x:{title:{display:true,text:'Time (ms)'},ticks:{maxTicksLimit:8,font:{size:10}}},y:{title:{display:true,text:'Amplitude'},min:-1.2,max:1.2}}}});}
+  if(nfChart){nfChart.destroy();nfChart=null;}
+  nfChart=new Chart(document.getElementById('nfCanvas'),{type:'line',data:{labels:labels,datasets:[{label:'cos(ω₀t)',data:data,borderColor:'#5A3EED',borderWidth:2,pointRadius:0,fill:false}]},options:{responsive:true,animation:{duration:0},plugins:{title:{display:true,text:'Undamped Oscillation at f₀ = '+f0.toFixed(1)+' Hz  (T = '+(T>=0.001?(T*1000).toFixed(2)+' ms':(T*1e6).toFixed(1)+' μs')+')',font:{size:13},color:'#333'},legend:{display:false}},scales:{x:{title:{display:true,text:'Time (ms)'},ticks:{maxTicksLimit:8,font:{size:10}}},y:{title:{display:true,text:'Amplitude'},min:-1.2,max:1.2}}}});
 }
 updateNF();
 </script>
@@ -282,7 +284,7 @@ Think of overdamped response like a door closer that's been adjusted too tight�
 
 #### Diagram: Overdamped Step Response
 
-<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px; margin:1rem 0;">
+<div class="msim-box"><button class="msim-btn" onclick="toggleFS(this)">⛶ Fullscreen</button>
 <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px;">
 <label style="font-size:0.9em;">ζ: <input type="range" id="odZ" min="1.05" max="5" value="2" step="0.05" oninput="drawOD()"> <strong id="odZv">2.00</strong></label>
 <label style="font-size:0.9em;">ω₀: <input type="range" id="odW" min="1" max="20" value="5" step="0.5" oninput="drawOD()"> <strong id="odWv">5.0</strong></label>
@@ -353,7 +355,7 @@ Notice that light damping barely affects the frequency, but heavy damping signif
 
 #### Diagram: Underdamped Oscillation Anatomy
 
-<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px; margin:1rem 0;">
+<div class="msim-box"><button class="msim-btn" onclick="toggleFS(this)">⛶ Fullscreen</button>
 <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px;">
 <label style="font-size:0.9em;">ζ: <input type="range" id="udZ" min="0.02" max="0.95" value="0.2" step="0.02" oninput="drawUD()"> <strong id="udZv">0.20</strong></label>
 <label style="font-size:0.9em;">ω₀: <input type="range" id="udW" min="1" max="20" value="5" step="0.5" oninput="drawUD()"> <strong id="udWv">5.0</strong></label>
@@ -439,7 +441,7 @@ Critical damping is often the design target for:
 
 #### Diagram: Three Damping Regimes Comparison
 
-<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px; margin:1rem 0;">
+<div class="msim-box"><button class="msim-btn" onclick="toggleFS(this)">⛶ Fullscreen</button>
 <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px;">
 <label style="font-size:0.9em;">ω₀: <input type="range" id="dcW" min="1" max="20" value="5" step="0.5" oninput="drawDC()"> <strong id="dcWv">5.0</strong></label>
 <label style="font-size:0.9em;">ζ (under): <input type="range" id="dcZu" min="0.05" max="0.9" value="0.2" step="0.05" oninput="drawDC()"> <strong id="dcZuv">0.20</strong></label>
@@ -507,7 +509,7 @@ With no losses (R = 0), this would continue forever. With resistance, some energ
 
 #### Diagram: Series RLC Resonance Explorer
 
-<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px; margin:1rem 0;">
+<div class="msim-box"><button class="msim-btn" onclick="toggleFS(this)">⛶ Fullscreen</button>
 <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:6px;">
 <label style="font-size:0.9em;">R (Ω): <input type="range" id="resR" min="1" max="200" value="10" step="1" oninput="drawRes()"> <strong id="resRv">10</strong></label>
 <label style="font-size:0.9em;">L (mH): <input type="range" id="resL" min="1" max="100" value="10" step="1" oninput="drawRes()"> <strong id="resLv">10</strong></label>
@@ -595,7 +597,7 @@ Notice that Q has opposite relationships with R for series vs. parallel circuits
 
 #### Diagram: Quality Factor and Bandwidth
 
-<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px; margin:1rem 0;">
+<div class="msim-box"><button class="msim-btn" onclick="toggleFS(this)">⛶ Fullscreen</button>
 <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px;">
 <label style="font-size:0.9em;">Highlight Q: <input type="range" id="qfQ" min="1" max="100" value="10" step="1" oninput="drawQF()"> <strong id="qfQv">10</strong></label>
 <label style="font-size:0.9em;">f₀ (Hz): <input type="range" id="qfF" min="100" max="10000" value="1000" step="100" oninput="drawQF()"> <strong id="qfFv">1000</strong></label>
@@ -654,7 +656,7 @@ When an underdamped RLC circuit receives a pulse:
 
 #### Diagram: Pulse Response and Ringing
 
-<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px; margin:1rem 0;">
+<div class="msim-box"><button class="msim-btn" onclick="toggleFS(this)">⛶ Fullscreen</button>
 <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:6px;">
 <label style="font-size:0.9em;">ζ: <input type="range" id="prZ" min="0.02" max="0.5" value="0.1" step="0.02" oninput="drawPR()"> <strong id="prZv">0.10</strong></label>
 <label style="font-size:0.9em;">ω₀: <input type="range" id="prW" min="5" max="30" value="10" step="1" oninput="drawPR()"> <strong id="prWv">10</strong></label>
@@ -710,7 +712,7 @@ With resistance:
 
 #### Diagram: Energy Exchange Animation
 
-<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px; margin:1rem 0;">
+<div class="msim-box"><button class="msim-btn" onclick="toggleFS(this)">⛶ Fullscreen</button>
 <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:6px;align-items:center;">
 <label style="font-size:0.9em;">ζ: <input type="range" id="enZ" min="0.02" max="0.5" value="0.1" step="0.02" oninput="resetEn()"> <strong id="enZv">0.10</strong></label>
 <label style="font-size:0.9em;">ω₀: <input type="range" id="enW" min="2" max="15" value="5" step="0.5" oninput="resetEn()"> <strong id="enWv">5.0</strong></label>
