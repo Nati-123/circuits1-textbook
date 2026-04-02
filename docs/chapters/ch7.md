@@ -112,7 +112,37 @@ Notice that the undamped natural frequency \(\omega_0\) is the same for both con
 
 #### Diagram: Series vs Parallel RLC Configuration
 
-<iframe src="../sims/rlc-circuit/main.html" width="100%" height="670px" scrolling="no" style="background: #fff; border: 1px solid #e0e0e0;"></iframe>
+<div id="rlc-sim" style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:10px; margin:1rem 0;">
+<canvas id="rlcCanvas" width="690" height="400"></canvas>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+(function(){
+  const ctx = document.getElementById('rlcCanvas').getContext('2d');
+  const w0 = 100, R = 20, L = 0.1, C = 1e-4;
+  const alphaS = R/(2*L), alphaP = 1/(2*R*C);
+  const zetaS = alphaS/w0, zetaP = alphaP/w0;
+  const N = 200, tMax = 0.1;
+  const labels = [], seriesData = [], parallelData = [];
+  for(let i=0;i<=N;i++){
+    const t = i*tMax/N; labels.push(t.toFixed(4));
+    let vs, vp;
+    // Series
+    if(zetaS<1){const wd=w0*Math.sqrt(1-zetaS*zetaS); vs=1-(1/Math.sqrt(1-zetaS*zetaS))*Math.exp(-alphaS*t)*Math.sin(wd*t+Math.acos(zetaS));}
+    else if(zetaS===1){vs=1-(1+w0*t)*Math.exp(-w0*t);}
+    else{const s1=-alphaS+Math.sqrt(alphaS*alphaS-w0*w0),s2=-alphaS-Math.sqrt(alphaS*alphaS-w0*w0); vs=1+s2/(s1-s2)*Math.exp(s1*t)+s1/(s2-s1)*Math.exp(s2*t);}
+    // Parallel
+    if(zetaP<1){const wd=w0*Math.sqrt(1-zetaP*zetaP); vp=1-(1/Math.sqrt(1-zetaP*zetaP))*Math.exp(-alphaP*t)*Math.sin(wd*t+Math.acos(zetaP));}
+    else if(zetaP===1){vp=1-(1+w0*t)*Math.exp(-w0*t);}
+    else{const s1=-alphaP+Math.sqrt(alphaP*alphaP-w0*w0),s2=-alphaP-Math.sqrt(alphaP*alphaP-w0*w0); vp=1+s2/(s1-s2)*Math.exp(s1*t)+s1/(s2-s1)*Math.exp(s2*t);}
+    seriesData.push(vs); parallelData.push(vp);
+  }
+  new Chart(ctx,{type:'line',data:{labels,datasets:[
+    {label:'Series RLC (ζ='+zetaS.toFixed(2)+')',data:seriesData,borderColor:'#5A3EED',borderWidth:2,pointRadius:0,fill:false},
+    {label:'Parallel RLC (ζ='+zetaP.toFixed(2)+')',data:parallelData,borderColor:'#E53935',borderWidth:2,pointRadius:0,fill:false}
+  ]},options:{responsive:true,plugins:{title:{display:true,text:'Series vs Parallel RLC Step Response (R=20Ω, L=100mH, C=100μF)',font:{size:14},color:'#333'}},scales:{x:{title:{display:true,text:'Time (s)'},ticks:{maxTicksLimit:10}},y:{title:{display:true,text:'Normalized Voltage'},min:-0.2,max:1.8}}}});
+})();
+</script>
 
 ## The Characteristic Equation: Finding the Roots
 
@@ -162,7 +192,24 @@ The natural frequency depends only on the energy storage elements (L and C), not
 
 #### Diagram: Natural Frequency Calculator
 
-<iframe src="../sims/natural-frequency-calculator/main.html" width="100%" height="500px" scrolling="no" style="background: #fff; border: 1px solid #e0e0e0;"></iframe>
+<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:15px; margin:1rem 0;">
+<label>L (mH): <input type="range" id="nfL" min="0.1" max="100" value="10" step="0.1" oninput="updateNF()"><span id="nfLval">10</span></label><br>
+<label>C (μF): <input type="range" id="nfC" min="0.01" max="100" value="1" step="0.01" oninput="updateNF()"><span id="nfCval">1</span></label>
+<div id="nfResult" style="font-size:1.2em; margin-top:10px; padding:10px; background:#F8F6FF; border-radius:8px;"></div>
+</div>
+<script>
+function updateNF(){
+  const L=document.getElementById('nfL').value/1000, C=document.getElementById('nfC').value*1e-6;
+  document.getElementById('nfLval').textContent=document.getElementById('nfL').value;
+  document.getElementById('nfCval').textContent=document.getElementById('nfC').value;
+  const w0=1/Math.sqrt(L*C), f0=w0/(2*Math.PI);
+  document.getElementById('nfResult').innerHTML=
+    '<strong style="color:#5A3EED">ω₀ = '+w0.toFixed(1)+' rad/s</strong><br>'+
+    '<strong style="color:#D4A017">f₀ = '+f0.toFixed(1)+' Hz</strong><br>'+
+    'T = '+(1/f0*1000).toFixed(3)+' ms';
+}
+updateNF();
+</script>
 
 ## Damping Ratio: How Quickly the Drama Fades
 
@@ -217,7 +264,19 @@ Think of overdamped response like a door closer that's been adjusted too tight�
 
 #### Diagram: Overdamped Step Response
 
-<iframe src="../sims/overdamped-response/main.html" width="100%" height="450px" scrolling="no" style="background: #fff; border: 1px solid #e0e0e0;"></iframe>
+<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:10px; margin:1rem 0;">
+<canvas id="overdampedCanvas" width="690" height="350"></canvas>
+</div>
+<script>
+(function(){
+  const ctx=document.getElementById('overdampedCanvas').getContext('2d');
+  const w0=5,zeta=2.0,alpha=zeta*w0;
+  const s1=-alpha+Math.sqrt(alpha*alpha-w0*w0),s2=-alpha-Math.sqrt(alpha*alpha-w0*w0);
+  const N=200,tMax=5/alpha,labels=[],data=[];
+  for(let i=0;i<=N;i++){const t=i*tMax/N;labels.push(t.toFixed(3));data.push(1+s2/(s1-s2)*Math.exp(s1*t)+s1/(s2-s1)*Math.exp(s2*t));}
+  new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Overdamped (ζ=2.0)',data,borderColor:'#5A3EED',borderWidth:2,pointRadius:0,fill:false}]},options:{responsive:true,plugins:{title:{display:true,text:'Overdamped Step Response (ζ=2.0, ω₀=5)',font:{size:14},color:'#333'}},scales:{x:{title:{display:true,text:'Time (s)'},ticks:{maxTicksLimit:10}},y:{title:{display:true,text:'Voltage (V)'},min:0,max:1.1}}}});
+})();
+</script>
 
 ## Underdamped Response: The Exciting One
 
@@ -262,7 +321,25 @@ Notice that light damping barely affects the frequency, but heavy damping signif
 
 #### Diagram: Underdamped Oscillation Anatomy
 
-<iframe src="../sims/underdamped-oscillation/main.html" width="100%" height="500px" scrolling="no" style="background: #fff; border: 1px solid #e0e0e0;"></iframe>
+<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:10px; margin:1rem 0;">
+<canvas id="underdampedCanvas" width="690" height="380"></canvas>
+</div>
+<script>
+(function(){
+  const ctx=document.getElementById('underdampedCanvas').getContext('2d');
+  const w0=5,zeta=0.2,alpha=zeta*w0,wd=w0*Math.sqrt(1-zeta*zeta),phi=Math.acos(zeta);
+  const N=300,tMax=8/alpha,labels=[],resp=[],envU=[],envL=[];
+  const overshoot=(100*Math.exp(-Math.PI*zeta/Math.sqrt(1-zeta*zeta))).toFixed(1);
+  for(let i=0;i<=N;i++){const t=i*tMax/N;labels.push(t.toFixed(3));
+    const e=Math.exp(-alpha*t)/Math.sqrt(1-zeta*zeta);
+    resp.push(1-e*Math.sin(wd*t+phi)); envU.push(1+e); envL.push(1-e);}
+  new Chart(ctx,{type:'line',data:{labels,datasets:[
+    {label:'Response (ζ=0.2)',data:resp,borderColor:'#5A3EED',borderWidth:2,pointRadius:0,fill:false},
+    {label:'Upper Envelope',data:envU,borderColor:'#D4A017',borderWidth:1,borderDash:[5,5],pointRadius:0,fill:false},
+    {label:'Lower Envelope',data:envL,borderColor:'#D4A017',borderWidth:1,borderDash:[5,5],pointRadius:0,fill:false}
+  ]},options:{responsive:true,plugins:{title:{display:true,text:'Underdamped Oscillation (ζ=0.2, ω₀=5, Overshoot='+overshoot+'%)',font:{size:14},color:'#333'}},scales:{x:{title:{display:true,text:'Time (s)'},ticks:{maxTicksLimit:10}},y:{title:{display:true,text:'Voltage (V)'},min:-0.3,max:2.0}}}});
+})();
+</script>
 
 ### Overshoot and Settling Time
 
@@ -318,7 +395,32 @@ Critical damping is often the design target for:
 
 #### Diagram: Three Damping Regimes Comparison
 
-<iframe src="../sims/damping-comparison/main.html" width="100%" height="500px" scrolling="no" style="background: #fff; border: 1px solid #e0e0e0;"></iframe>
+<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:10px; margin:1rem 0;">
+<canvas id="dampingCanvas" width="690" height="380"></canvas>
+</div>
+<script>
+(function(){
+  const ctx=document.getElementById('dampingCanvas').getContext('2d');
+  const w0=5,N=300,tMax=3;
+  const labels=[],under=[],crit=[],over=[];
+  const zu=0.2,zo=3.0;
+  for(let i=0;i<=N;i++){const t=i*tMax/N;labels.push(t.toFixed(3));
+    // Underdamped
+    const au=zu*w0,wdu=w0*Math.sqrt(1-zu*zu);
+    under.push(1-(1/Math.sqrt(1-zu*zu))*Math.exp(-au*t)*Math.sin(wdu*t+Math.acos(zu)));
+    // Critically damped
+    crit.push(1-(1+w0*t)*Math.exp(-w0*t));
+    // Overdamped
+    const ao=zo*w0,s1o=-ao+Math.sqrt(ao*ao-w0*w0),s2o=-ao-Math.sqrt(ao*ao-w0*w0);
+    over.push(1+s2o/(s1o-s2o)*Math.exp(s1o*t)+s1o/(s2o-s1o)*Math.exp(s2o*t));
+  }
+  new Chart(ctx,{type:'line',data:{labels,datasets:[
+    {label:'Underdamped (ζ=0.2)',data:under,borderColor:'#5A3EED',borderWidth:2,pointRadius:0,fill:false},
+    {label:'Critically Damped (ζ=1.0)',data:crit,borderColor:'#D4A017',borderWidth:2,pointRadius:0,fill:false},
+    {label:'Overdamped (ζ=3.0)',data:over,borderColor:'#E53935',borderWidth:2,pointRadius:0,fill:false}
+  ]},options:{responsive:true,plugins:{title:{display:true,text:'Three Damping Regimes (ω₀=5 rad/s)',font:{size:14},color:'#333'}},scales:{x:{title:{display:true,text:'Time (s)'},ticks:{maxTicksLimit:10}},y:{title:{display:true,text:'Voltage (V)'},min:-0.2,max:1.8}}}});
+})();
+</script>
 
 ## Resonant Frequency: When Circuits Sing
 
@@ -356,7 +458,26 @@ With no losses (R = 0), this would continue forever. With resistance, some energ
 
 #### Diagram: Series RLC Resonance Explorer
 
-<iframe src="../sims/series-resonance/main.html" width="100%" height="500px" scrolling="no" style="background: #fff; border: 1px solid #e0e0e0;"></iframe>
+<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:10px; margin:1rem 0;">
+<canvas id="resonanceCanvas" width="690" height="380"></canvas>
+</div>
+<script>
+(function(){
+  const ctx=document.getElementById('resonanceCanvas').getContext('2d');
+  const R=10,L=0.01,C=1e-6;
+  const f0=1/(2*Math.PI*Math.sqrt(L*C)),Q=(1/R)*Math.sqrt(L/C),BW=f0/Q;
+  const fMin=f0*0.1,fMax=f0*10,N=300,labels=[],mag=[];
+  let peak=0;
+  for(let i=0;i<=N;i++){
+    const f=fMin*Math.pow(fMax/fMin,i/N);labels.push(f.toFixed(0));
+    const XL=2*Math.PI*f*L,XC=1/(2*Math.PI*f*C);
+    const H=1/Math.sqrt(R*R+(XL-XC)*(XL-XC));
+    if(H>peak)peak=H; mag.push(H);
+  }
+  for(let i=0;i<mag.length;i++)mag[i]/=peak; // normalize
+  new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'|I/V| Normalized',data:mag,borderColor:'#5A3EED',borderWidth:2,pointRadius:0,fill:false}]},options:{responsive:true,plugins:{title:{display:true,text:'Series RLC Resonance (f₀='+f0.toFixed(0)+'Hz, Q='+Q.toFixed(1)+', BW='+BW.toFixed(0)+'Hz)',font:{size:14},color:'#333'}},scales:{x:{title:{display:true,text:'Frequency (Hz)'},ticks:{maxTicksLimit:10}},y:{title:{display:true,text:'Normalized |I|'},min:0,max:1.1}}}});
+})();
+</script>
 
 ## Quality Factor: How Sharp is the Resonance?
 
@@ -414,7 +535,30 @@ Notice that Q has opposite relationships with R for series vs. parallel circuits
 
 #### Diagram: Quality Factor and Bandwidth
 
-<iframe src="../sims/quality-factor/main.html" width="100%" height="500px" scrolling="no" style="background: #fff; border: 1px solid #e0e0e0;"></iframe>
+<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:10px; margin:1rem 0;">
+<canvas id="qfactorCanvas" width="690" height="380"></canvas>
+</div>
+<script>
+(function(){
+  const ctx=document.getElementById('qfactorCanvas').getContext('2d');
+  const f0=1000,N=300,fMin=100,fMax=10000;
+  const Qs=[2,5,20,50],colors=['#E53935','#43A047','#1E88E5','#FF9800'];
+  const labels=[];
+  const datasets=Qs.map((Q,idx)=>{
+    const data=[];
+    for(let i=0;i<=N;i++){
+      const f=fMin*Math.pow(fMax/fMin,i/N);
+      if(idx===0)labels.push(f.toFixed(0));
+      const r=f/f0-f0/f; data.push(1/Math.sqrt(1+Q*Q*r*r));
+    }
+    return{label:'Q='+Q,data,borderColor:colors[idx],borderWidth:2,pointRadius:0,fill:false};
+  });
+  // Add -3dB line
+  const db3=Array(N+1).fill(0.707);
+  datasets.push({label:'-3dB (0.707)',data:db3,borderColor:'#999',borderWidth:1,borderDash:[5,5],pointRadius:0,fill:false});
+  new Chart(ctx,{type:'line',data:{labels,datasets},options:{responsive:true,plugins:{title:{display:true,text:'Quality Factor: Resonance Sharpness (f₀=1000 Hz)',font:{size:14},color:'#333'}},scales:{x:{title:{display:true,text:'Frequency (Hz)'},ticks:{maxTicksLimit:10}},y:{title:{display:true,text:'Normalized Response'},min:0,max:1.1}}}});
+})();
+</script>
 
 ## Pulse Response: Ringing and Transients
 
@@ -443,7 +587,25 @@ When an underdamped RLC circuit receives a pulse:
 
 #### Diagram: Pulse Response and Ringing
 
-<iframe src="../sims/pulse-ringing/main.html" width="100%" height="450px" scrolling="no" style="background: #fff; border: 1px solid #e0e0e0;"></iframe>
+<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:10px; margin:1rem 0;">
+<canvas id="pulseCanvas" width="690" height="380"></canvas>
+</div>
+<script>
+(function(){
+  const ctx=document.getElementById('pulseCanvas').getContext('2d');
+  const w0=10,zeta=0.1,alpha=zeta*w0,wd=w0*Math.sqrt(1-zeta*zeta),phi=Math.acos(zeta),pw=0.5;
+  function step(t){if(t<0)return 0;return 1-(1/Math.sqrt(1-zeta*zeta))*Math.exp(-alpha*t)*Math.sin(wd*t+phi);}
+  const N=400,tMax=4,labels=[],pulse=[],resp=[];
+  for(let i=0;i<=N;i++){const t=i*tMax/N;labels.push(t.toFixed(3));
+    pulse.push(t>=0&&t<=pw?1:0);
+    resp.push(step(t)-step(t-pw));
+  }
+  new Chart(ctx,{type:'line',data:{labels,datasets:[
+    {label:'Input Pulse',data:pulse,borderColor:'#D4A017',borderWidth:2,pointRadius:0,fill:false},
+    {label:'RLC Response (ζ=0.1)',data:resp,borderColor:'#5A3EED',borderWidth:2,pointRadius:0,fill:false}
+  ]},options:{responsive:true,plugins:{title:{display:true,text:'Pulse Response and Ringing (ω₀=10, ζ=0.1, pulse=0.5s)',font:{size:14},color:'#333'}},scales:{x:{title:{display:true,text:'Time (s)'},ticks:{maxTicksLimit:10}},y:{title:{display:true,text:'Amplitude'},min:-1.5,max:2.0}}}});
+})();
+</script>
 
 ## Energy Exchange in RLC Circuits
 
@@ -470,7 +632,30 @@ With resistance:
 
 #### Diagram: Energy Exchange Animation
 
-<iframe src="../sims/energy-exchange/main.html" width="100%" height="500px" scrolling="no" style="background: #fff; border: 1px solid #e0e0e0;"></iframe>
+<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:10px; margin:1rem 0;">
+<canvas id="energyCanvas" width="690" height="380"></canvas>
+</div>
+<script>
+(function(){
+  const ctx=document.getElementById('energyCanvas').getContext('2d');
+  const w0=5,zeta=0.1,alpha=zeta*w0,wd=w0*Math.sqrt(1-zeta*zeta);
+  const L=1,C=1/(w0*w0),V0=10;
+  const N=300,tMax=8/alpha,labels=[],ec=[],el=[],etot=[];
+  const E0=0.5*C*V0*V0;
+  for(let i=0;i<=N;i++){const t=i*tMax/N;labels.push(t.toFixed(3));
+    const v=V0*Math.exp(-alpha*t)*Math.cos(wd*t);
+    const dvdt=V0*Math.exp(-alpha*t)*(-alpha*Math.cos(wd*t)-wd*Math.sin(wd*t));
+    const iL=C*dvdt;
+    const Ec=0.5*C*v*v/E0, El=0.5*L*iL*iL/E0;
+    ec.push(Ec); el.push(El); etot.push(Ec+El);
+  }
+  new Chart(ctx,{type:'line',data:{labels,datasets:[
+    {label:'Capacitor Energy (E_C)',data:ec,borderColor:'#2196F3',backgroundColor:'rgba(33,150,243,0.15)',borderWidth:2,pointRadius:0,fill:true},
+    {label:'Inductor Energy (E_L)',data:el,borderColor:'#FF9800',backgroundColor:'rgba(255,152,0,0.15)',borderWidth:2,pointRadius:0,fill:true},
+    {label:'Total Energy',data:etot,borderColor:'#E53935',borderWidth:1,borderDash:[5,5],pointRadius:0,fill:false}
+  ]},options:{responsive:true,plugins:{title:{display:true,text:'Energy Exchange in RLC Circuit (ζ=0.1, ω₀=5)',font:{size:14},color:'#333'}},scales:{x:{title:{display:true,text:'Time (s)'},ticks:{maxTicksLimit:10}},y:{title:{display:true,text:'Normalized Energy'},min:0,max:1.1}}}});
+})();
+</script>
 
 ## Design Applications
 
