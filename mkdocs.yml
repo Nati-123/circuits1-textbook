@@ -9,7 +9,6 @@ theme:
     text: Roboto
     code: JetBrains Mono
   features:
-    - navigation.tabs
     - navigation.sections
     - navigation.expand
     - navigation.footer
