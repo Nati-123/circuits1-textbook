@@ -60,3 +60,10 @@ nav:
   - MicroSims:
     - RLC Circuit Simulator: sims/rlc-circuit/index.md
     - Natural Frequency Calculator: sims/natural-frequency-calculator/index.md
+    - Overdamped Response: sims/overdamped-response/main.html
+    - Underdamped Oscillation: sims/underdamped-oscillation/main.html
+    - Damping Comparison: sims/damping-comparison/main.html
+    - Series RLC Resonance: sims/series-resonance/main.html
+    - Quality Factor & Bandwidth: sims/quality-factor/main.html
+    - Pulse Response & Ringing: sims/pulse-ringing/main.html
+    - Energy Exchange in RLC: sims/energy-exchange/main.html
