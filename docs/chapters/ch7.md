@@ -112,36 +112,44 @@ Notice that the undamped natural frequency \(\omega_0\) is the same for both con
 
 #### Diagram: Series vs Parallel RLC Configuration
 
-<div id="rlc-sim" style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:10px; margin:1rem 0;">
-<canvas id="rlcCanvas" width="690" height="400"></canvas>
+<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px; margin:1rem 0;">
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+<label style="font-size:0.9em;">R (Ω): <input type="range" id="rlcR" min="1" max="200" value="20" step="1" oninput="drawRLC()"><strong id="rlcRv">20</strong></label>
+<label style="font-size:0.9em;">L (mH): <input type="range" id="rlcL" min="1" max="200" value="100" step="1" oninput="drawRLC()"><strong id="rlcLv">100</strong></label>
+<label style="font-size:0.9em;">C (μF): <input type="range" id="rlcC" min="1" max="200" value="100" step="1" oninput="drawRLC()"><strong id="rlcCv">100</strong></label>
+</div>
+<canvas id="rlcCanvas" width="690" height="360"></canvas>
+<div id="rlcInfo" style="font-size:0.9em;margin-top:6px;padding:8px;background:#F8F6FF;border-radius:6px;"></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script>
-(function(){
-  const ctx = document.getElementById('rlcCanvas').getContext('2d');
-  const w0 = 100, R = 20, L = 0.1, C = 1e-4;
-  const alphaS = R/(2*L), alphaP = 1/(2*R*C);
-  const zetaS = alphaS/w0, zetaP = alphaP/w0;
-  const N = 200, tMax = 0.1;
-  const labels = [], seriesData = [], parallelData = [];
-  for(let i=0;i<=N;i++){
-    const t = i*tMax/N; labels.push(t.toFixed(4));
-    let vs, vp;
-    // Series
-    if(zetaS<1){const wd=w0*Math.sqrt(1-zetaS*zetaS); vs=1-(1/Math.sqrt(1-zetaS*zetaS))*Math.exp(-alphaS*t)*Math.sin(wd*t+Math.acos(zetaS));}
-    else if(zetaS===1){vs=1-(1+w0*t)*Math.exp(-w0*t);}
-    else{const s1=-alphaS+Math.sqrt(alphaS*alphaS-w0*w0),s2=-alphaS-Math.sqrt(alphaS*alphaS-w0*w0); vs=1+s2/(s1-s2)*Math.exp(s1*t)+s1/(s2-s1)*Math.exp(s2*t);}
-    // Parallel
-    if(zetaP<1){const wd=w0*Math.sqrt(1-zetaP*zetaP); vp=1-(1/Math.sqrt(1-zetaP*zetaP))*Math.exp(-alphaP*t)*Math.sin(wd*t+Math.acos(zetaP));}
-    else if(zetaP===1){vp=1-(1+w0*t)*Math.exp(-w0*t);}
-    else{const s1=-alphaP+Math.sqrt(alphaP*alphaP-w0*w0),s2=-alphaP-Math.sqrt(alphaP*alphaP-w0*w0); vp=1+s2/(s1-s2)*Math.exp(s1*t)+s1/(s2-s1)*Math.exp(s2*t);}
-    seriesData.push(vs); parallelData.push(vp);
-  }
-  new Chart(ctx,{type:'line',data:{labels,datasets:[
-    {label:'Series RLC (ζ='+zetaS.toFixed(2)+')',data:seriesData,borderColor:'#5A3EED',borderWidth:2,pointRadius:0,fill:false},
-    {label:'Parallel RLC (ζ='+zetaP.toFixed(2)+')',data:parallelData,borderColor:'#E53935',borderWidth:2,pointRadius:0,fill:false}
-  ]},options:{responsive:true,plugins:{title:{display:true,text:'Series vs Parallel RLC Step Response (R=20Ω, L=100mH, C=100μF)',font:{size:14},color:'#333'}},scales:{x:{title:{display:true,text:'Time (s)'},ticks:{maxTicksLimit:10}},y:{title:{display:true,text:'Normalized Voltage'},min:-0.2,max:1.8}}}});
-})();
+var rlcChart=null;
+function stepResp(alpha,w0,t){
+  var z=alpha/w0;
+  if(Math.abs(z-1)<0.01){return 1-(1+w0*t)*Math.exp(-w0*t);}
+  if(z<1){var wd=w0*Math.sqrt(1-z*z);return 1-(1/Math.sqrt(1-z*z))*Math.exp(-alpha*t)*Math.sin(wd*t+Math.acos(z));}
+  var d=Math.sqrt(alpha*alpha-w0*w0),s1=-alpha+d,s2=-alpha-d;
+  return 1+s2/(s1-s2)*Math.exp(s1*t)+s1/(s2-s1)*Math.exp(s2*t);
+}
+function dampLabel(z){return Math.abs(z-1)<0.02?'Crit. Damped':z<1?'Underdamped':'Overdamped';}
+function drawRLC(){
+  var R=+document.getElementById('rlcR').value,Lm=+document.getElementById('rlcL').value,Cu=+document.getElementById('rlcC').value;
+  document.getElementById('rlcRv').textContent=R;document.getElementById('rlcLv').textContent=Lm;document.getElementById('rlcCv').textContent=Cu;
+  var L=Lm*1e-3,C=Cu*1e-6,w0=1/Math.sqrt(L*C);
+  var aS=R/(2*L),aP=1/(2*R*C),zS=aS/w0,zP=aP/w0;
+  var tMax=Math.max(5/aS,5/aP,6*Math.PI/w0);tMax=Math.min(tMax,2);
+  var N=300,labels=[],sD=[],pD=[],ssLine=[];
+  for(var i=0;i<=N;i++){var t=i*tMax/N;labels.push((t*1000).toFixed(1));sD.push(stepResp(aS,w0,t));pD.push(stepResp(aP,w0,t));ssLine.push(1);}
+  var datasets=[
+    {label:'Series (ζₛ='+zS.toFixed(3)+', '+dampLabel(zS)+')',data:sD,borderColor:'#5A3EED',borderWidth:2.5,pointRadius:0,fill:false},
+    {label:'Parallel (ζₚ='+zP.toFixed(3)+', '+dampLabel(zP)+')',data:pD,borderColor:'#E53935',borderWidth:2.5,pointRadius:0,fill:false},
+    {label:'Steady State = 1',data:ssLine,borderColor:'#D4A017',borderWidth:1,borderDash:[6,4],pointRadius:0,fill:false}
+  ];
+  if(rlcChart){rlcChart.data.labels=labels;rlcChart.data.datasets=datasets;rlcChart.options.plugins.title.text='Series vs Parallel RLC Step Response';rlcChart.update();}
+  else{rlcChart=new Chart(document.getElementById('rlcCanvas'),{type:'line',data:{labels:labels,datasets:datasets},options:{responsive:true,animation:{duration:0},plugins:{title:{display:true,text:'Series vs Parallel RLC Step Response',font:{size:15},color:'#333'},legend:{labels:{font:{size:11}}}},scales:{x:{title:{display:true,text:'Time (ms)',font:{size:12}},ticks:{maxTicksLimit:10,font:{size:10}}},y:{title:{display:true,text:'Normalized Voltage',font:{size:12}},min:-0.3,max:2.0,ticks:{font:{size:10}}}}}});}
+  document.getElementById('rlcInfo').innerHTML='<b>ω₀ = '+(w0).toFixed(1)+' rad/s</b> &nbsp;|&nbsp; <span style="color:#5A3EED">Series: αₛ='+aS.toFixed(1)+', ζₛ='+zS.toFixed(3)+'</span> &nbsp;|&nbsp; <span style="color:#E53935">Parallel: αₚ='+aP.toFixed(1)+', ζₚ='+zP.toFixed(3)+'</span>';
+}
+drawRLC();
 </script>
 
 ## The Characteristic Equation: Finding the Roots
@@ -192,21 +200,31 @@ The natural frequency depends only on the energy storage elements (L and C), not
 
 #### Diagram: Natural Frequency Calculator
 
-<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:15px; margin:1rem 0;">
-<label>L (mH): <input type="range" id="nfL" min="0.1" max="100" value="10" step="0.1" oninput="updateNF()"><span id="nfLval">10</span></label><br>
-<label>C (μF): <input type="range" id="nfC" min="0.01" max="100" value="1" step="0.01" oninput="updateNF()"><span id="nfCval">1</span></label>
-<div id="nfResult" style="font-size:1.2em; margin-top:10px; padding:10px; background:#F8F6FF; border-radius:8px;"></div>
+<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px; margin:1rem 0;">
+<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px;">
+<label style="font-size:0.9em;">L (mH): <input type="range" id="nfL" min="0.1" max="100" value="10" step="0.1" oninput="updateNF()"> <strong id="nfLval">10.0</strong></label>
+<label style="font-size:0.9em;">C (μF): <input type="range" id="nfC" min="0.01" max="100" value="1" step="0.01" oninput="updateNF()"> <strong id="nfCval">1.00</strong></label>
+</div>
+<div id="nfResult" style="padding:10px;background:#F8F6FF;border-radius:8px;margin-bottom:8px;font-size:0.95em;"></div>
+<canvas id="nfCanvas" width="690" height="250"></canvas>
 </div>
 <script>
+var nfChart=null;
 function updateNF(){
-  const L=document.getElementById('nfL').value/1000, C=document.getElementById('nfC').value*1e-6;
-  document.getElementById('nfLval').textContent=document.getElementById('nfL').value;
-  document.getElementById('nfCval').textContent=document.getElementById('nfC').value;
-  const w0=1/Math.sqrt(L*C), f0=w0/(2*Math.PI);
+  var Lm=+document.getElementById('nfL').value,Cu=+document.getElementById('nfC').value;
+  document.getElementById('nfLval').textContent=Lm.toFixed(1);
+  document.getElementById('nfCval').textContent=Cu.toFixed(2);
+  var L=Lm*1e-3,C=Cu*1e-6,w0=1/Math.sqrt(L*C),f0=w0/(2*Math.PI),T=1/f0;
   document.getElementById('nfResult').innerHTML=
-    '<strong style="color:#5A3EED">ω₀ = '+w0.toFixed(1)+' rad/s</strong><br>'+
-    '<strong style="color:#D4A017">f₀ = '+f0.toFixed(1)+' Hz</strong><br>'+
-    'T = '+(1/f0*1000).toFixed(3)+' ms';
+    '<b>Formula:</b> ω₀ = 1/√(LC) = 1/√('+(L*C).toExponential(3)+') = <span style="color:#5A3EED;font-size:1.15em"><b>'+w0.toFixed(1)+' rad/s</b></span><br>'+
+    '<b>f₀</b> = ω₀/(2π) = <span style="color:#D4A017;font-size:1.15em"><b>'+f0.toFixed(1)+' Hz</b></span> &nbsp;|&nbsp; <b>T</b> = '+(T>=0.001?(T*1000).toFixed(3)+' ms':T>=1e-6?(T*1e6).toFixed(2)+' μs':(T*1e9).toFixed(1)+' ns')+'<br>'+
+    '<b>L</b> = '+Lm+' mH = '+(L*1000).toFixed(3)+' × 10⁻³ H &nbsp;|&nbsp; <b>C</b> = '+Cu+' μF = '+(C*1e6).toFixed(4)+' × 10⁻⁶ F';
+  // Plot 3 periods of oscillation
+  var N=200,tMax=3*T,labels=[],data=[];
+  for(var i=0;i<=N;i++){var t=i*tMax/N;labels.push((t*1000).toFixed(2));data.push(Math.cos(w0*t));}
+  var ds=[{label:'cos(ω₀t) — undamped oscillation',data:data,borderColor:'#5A3EED',borderWidth:2,pointRadius:0,fill:false}];
+  if(nfChart){nfChart.data.labels=labels;nfChart.data.datasets=ds;nfChart.options.plugins.title.text='Undamped Oscillation at f₀ = '+f0.toFixed(1)+' Hz';nfChart.update();}
+  else{nfChart=new Chart(document.getElementById('nfCanvas'),{type:'line',data:{labels:labels,datasets:ds},options:{responsive:true,animation:{duration:0},plugins:{title:{display:true,text:'Undamped Oscillation at f₀ = '+f0.toFixed(1)+' Hz',font:{size:13},color:'#333'},legend:{display:false}},scales:{x:{title:{display:true,text:'Time (ms)'},ticks:{maxTicksLimit:8,font:{size:10}}},y:{title:{display:true,text:'Amplitude'},min:-1.2,max:1.2}}}});}
 }
 updateNF();
 </script>
@@ -264,18 +282,32 @@ Think of overdamped response like a door closer that's been adjusted too tight�
 
 #### Diagram: Overdamped Step Response
 
-<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:10px; margin:1rem 0;">
-<canvas id="overdampedCanvas" width="690" height="350"></canvas>
+<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px; margin:1rem 0;">
+<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px;">
+<label style="font-size:0.9em;">ζ: <input type="range" id="odZ" min="1.05" max="5" value="2" step="0.05" oninput="drawOD()"> <strong id="odZv">2.00</strong></label>
+<label style="font-size:0.9em;">ω₀: <input type="range" id="odW" min="1" max="20" value="5" step="0.5" oninput="drawOD()"> <strong id="odWv">5.0</strong></label>
+</div>
+<canvas id="overdampedCanvas" width="690" height="320"></canvas>
+<div id="odInfo" style="font-size:0.85em;margin-top:4px;color:#555;"></div>
 </div>
 <script>
-(function(){
-  const ctx=document.getElementById('overdampedCanvas').getContext('2d');
-  const w0=5,zeta=2.0,alpha=zeta*w0;
-  const s1=-alpha+Math.sqrt(alpha*alpha-w0*w0),s2=-alpha-Math.sqrt(alpha*alpha-w0*w0);
-  const N=200,tMax=5/alpha,labels=[],data=[];
-  for(let i=0;i<=N;i++){const t=i*tMax/N;labels.push(t.toFixed(3));data.push(1+s2/(s1-s2)*Math.exp(s1*t)+s1/(s2-s1)*Math.exp(s2*t));}
-  new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Overdamped (ζ=2.0)',data,borderColor:'#5A3EED',borderWidth:2,pointRadius:0,fill:false}]},options:{responsive:true,plugins:{title:{display:true,text:'Overdamped Step Response (ζ=2.0, ω₀=5)',font:{size:14},color:'#333'}},scales:{x:{title:{display:true,text:'Time (s)'},ticks:{maxTicksLimit:10}},y:{title:{display:true,text:'Voltage (V)'},min:0,max:1.1}}}});
-})();
+var odChart=null;
+function drawOD(){
+  var z=+document.getElementById('odZ').value,w0=+document.getElementById('odW').value;
+  document.getElementById('odZv').textContent=z.toFixed(2);document.getElementById('odWv').textContent=w0.toFixed(1);
+  var a=z*w0,d=Math.sqrt(a*a-w0*w0),s1=-a+d,s2=-a-d;
+  var tMax=5/Math.abs(s1),N=250,labels=[],data=[],ssLine=[];
+  for(var i=0;i<=N;i++){var t=i*tMax/N;labels.push(t.toFixed(3));
+    data.push(1+s2/(s1-s2)*Math.exp(s1*t)+s1/(s2-s1)*Math.exp(s2*t));ssLine.push(1);}
+  var ds=[
+    {label:'Overdamped Response (ζ='+z.toFixed(2)+')',data:data,borderColor:'#5A3EED',borderWidth:2.5,pointRadius:0,fill:false},
+    {label:'Steady State = 1',data:ssLine,borderColor:'#D4A017',borderWidth:1,borderDash:[6,4],pointRadius:0,fill:false}
+  ];
+  if(odChart){odChart.data.labels=labels;odChart.data.datasets=ds;odChart.update();}
+  else{odChart=new Chart(document.getElementById('overdampedCanvas'),{type:'line',data:{labels:labels,datasets:ds},options:{responsive:true,animation:{duration:0},plugins:{title:{display:true,text:'Overdamped Step Response',font:{size:14},color:'#333'},legend:{labels:{font:{size:11}}}},scales:{x:{title:{display:true,text:'Time (s)'},ticks:{maxTicksLimit:10,font:{size:10}}},y:{title:{display:true,text:'Voltage (V)'},min:0,max:1.15}}}});}
+  document.getElementById('odInfo').innerHTML='s₁ = '+s1.toFixed(2)+' &nbsp;|&nbsp; s₂ = '+s2.toFixed(2)+' &nbsp;|&nbsp; α = '+a.toFixed(2)+' &nbsp;|&nbsp; No oscillation — two real negative roots';
+}
+drawOD();
 </script>
 
 ## Underdamped Response: The Exciting One
@@ -321,24 +353,36 @@ Notice that light damping barely affects the frequency, but heavy damping signif
 
 #### Diagram: Underdamped Oscillation Anatomy
 
-<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:10px; margin:1rem 0;">
-<canvas id="underdampedCanvas" width="690" height="380"></canvas>
+<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px; margin:1rem 0;">
+<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px;">
+<label style="font-size:0.9em;">ζ: <input type="range" id="udZ" min="0.02" max="0.95" value="0.2" step="0.02" oninput="drawUD()"> <strong id="udZv">0.20</strong></label>
+<label style="font-size:0.9em;">ω₀: <input type="range" id="udW" min="1" max="20" value="5" step="0.5" oninput="drawUD()"> <strong id="udWv">5.0</strong></label>
+</div>
+<canvas id="underdampedCanvas" width="690" height="340"></canvas>
+<div id="udInfo" style="font-size:0.85em;margin-top:4px;padding:6px;background:#FFF8E1;border-radius:6px;"></div>
 </div>
 <script>
-(function(){
-  const ctx=document.getElementById('underdampedCanvas').getContext('2d');
-  const w0=5,zeta=0.2,alpha=zeta*w0,wd=w0*Math.sqrt(1-zeta*zeta),phi=Math.acos(zeta);
-  const N=300,tMax=8/alpha,labels=[],resp=[],envU=[],envL=[];
-  const overshoot=(100*Math.exp(-Math.PI*zeta/Math.sqrt(1-zeta*zeta))).toFixed(1);
-  for(let i=0;i<=N;i++){const t=i*tMax/N;labels.push(t.toFixed(3));
-    const e=Math.exp(-alpha*t)/Math.sqrt(1-zeta*zeta);
-    resp.push(1-e*Math.sin(wd*t+phi)); envU.push(1+e); envL.push(1-e);}
-  new Chart(ctx,{type:'line',data:{labels,datasets:[
-    {label:'Response (ζ=0.2)',data:resp,borderColor:'#5A3EED',borderWidth:2,pointRadius:0,fill:false},
-    {label:'Upper Envelope',data:envU,borderColor:'#D4A017',borderWidth:1,borderDash:[5,5],pointRadius:0,fill:false},
-    {label:'Lower Envelope',data:envL,borderColor:'#D4A017',borderWidth:1,borderDash:[5,5],pointRadius:0,fill:false}
-  ]},options:{responsive:true,plugins:{title:{display:true,text:'Underdamped Oscillation (ζ=0.2, ω₀=5, Overshoot='+overshoot+'%)',font:{size:14},color:'#333'}},scales:{x:{title:{display:true,text:'Time (s)'},ticks:{maxTicksLimit:10}},y:{title:{display:true,text:'Voltage (V)'},min:-0.3,max:2.0}}}});
-})();
+var udChart=null;
+function drawUD(){
+  var z=+document.getElementById('udZ').value,w0=+document.getElementById('udW').value;
+  document.getElementById('udZv').textContent=z.toFixed(2);document.getElementById('udWv').textContent=w0.toFixed(1);
+  var a=z*w0,wd=w0*Math.sqrt(1-z*z),phi=Math.acos(z);
+  var os=100*Math.exp(-Math.PI*z/Math.sqrt(1-z*z)),ts=4/(z*w0);
+  var tMax=Math.max(ts*1.5,8/a),N=350,labels=[],resp=[],envU=[],envL=[],ssLine=[];
+  for(var i=0;i<=N;i++){var t=i*tMax/N;labels.push(t.toFixed(3));
+    var e=Math.exp(-a*t)/Math.sqrt(1-z*z);
+    resp.push(1-e*Math.sin(wd*t+phi));envU.push(1+e);envL.push(1-e);ssLine.push(1);}
+  var ds=[
+    {label:'Response (ζ='+z.toFixed(2)+')',data:resp,borderColor:'#5A3EED',borderWidth:2.5,pointRadius:0,fill:false},
+    {label:'Decay Envelope',data:envU,borderColor:'#D4A017',borderWidth:1.5,borderDash:[6,4],pointRadius:0,fill:false},
+    {label:'',data:envL,borderColor:'#D4A017',borderWidth:1.5,borderDash:[6,4],pointRadius:0,fill:false},
+    {label:'Steady State',data:ssLine,borderColor:'#43A047',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false}
+  ];
+  if(udChart){udChart.data.labels=labels;udChart.data.datasets=ds;udChart.options.plugins.title.text='Underdamped Oscillation Anatomy';udChart.update();}
+  else{udChart=new Chart(document.getElementById('underdampedCanvas'),{type:'line',data:{labels:labels,datasets:ds},options:{responsive:true,animation:{duration:0},plugins:{title:{display:true,text:'Underdamped Oscillation Anatomy',font:{size:14},color:'#333'},legend:{labels:{font:{size:10},filter:function(item){return item.text!=='';}}}},scales:{x:{title:{display:true,text:'Time (s)'},ticks:{maxTicksLimit:10,font:{size:10}}},y:{title:{display:true,text:'Voltage (V)'},min:-0.4,max:2.2}}}});}
+  document.getElementById('udInfo').innerHTML='<b>Overshoot:</b> <span style="color:#E53935">'+os.toFixed(1)+'%</span> &nbsp;|&nbsp; <b>Settling Time (2%):</b> '+ts.toFixed(3)+' s &nbsp;|&nbsp; <b>ω_d:</b> '+wd.toFixed(2)+' rad/s &nbsp;|&nbsp; <b>f_d:</b> '+(wd/(2*Math.PI)).toFixed(2)+' Hz';
+}
+drawUD();
 </script>
 
 ### Overshoot and Settling Time
@@ -395,31 +439,36 @@ Critical damping is often the design target for:
 
 #### Diagram: Three Damping Regimes Comparison
 
-<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:10px; margin:1rem 0;">
-<canvas id="dampingCanvas" width="690" height="380"></canvas>
+<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px; margin:1rem 0;">
+<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px;">
+<label style="font-size:0.9em;">ω₀: <input type="range" id="dcW" min="1" max="20" value="5" step="0.5" oninput="drawDC()"> <strong id="dcWv">5.0</strong></label>
+<label style="font-size:0.9em;">ζ (under): <input type="range" id="dcZu" min="0.05" max="0.9" value="0.2" step="0.05" oninput="drawDC()"> <strong id="dcZuv">0.20</strong></label>
+<label style="font-size:0.9em;">ζ (over): <input type="range" id="dcZo" min="1.5" max="5" value="3" step="0.1" oninput="drawDC()"> <strong id="dcZov">3.0</strong></label>
+</div>
+<canvas id="dampingCanvas" width="690" height="340"></canvas>
 </div>
 <script>
-(function(){
-  const ctx=document.getElementById('dampingCanvas').getContext('2d');
-  const w0=5,N=300,tMax=3;
-  const labels=[],under=[],crit=[],over=[];
-  const zu=0.2,zo=3.0;
-  for(let i=0;i<=N;i++){const t=i*tMax/N;labels.push(t.toFixed(3));
-    // Underdamped
-    const au=zu*w0,wdu=w0*Math.sqrt(1-zu*zu);
+var dcChart=null;
+function drawDC(){
+  var w0=+document.getElementById('dcW').value,zu=+document.getElementById('dcZu').value,zo=+document.getElementById('dcZo').value;
+  document.getElementById('dcWv').textContent=w0.toFixed(1);document.getElementById('dcZuv').textContent=zu.toFixed(2);document.getElementById('dcZov').textContent=zo.toFixed(1);
+  var tMax=Math.max(4/(zu*w0),4/w0,4/(zo*w0)),N=300,labels=[],under=[],cr=[],over=[],ss=[];
+  for(var i=0;i<=N;i++){var t=i*tMax/N;labels.push(t.toFixed(3));
+    var au=zu*w0,wdu=w0*Math.sqrt(1-zu*zu);
     under.push(1-(1/Math.sqrt(1-zu*zu))*Math.exp(-au*t)*Math.sin(wdu*t+Math.acos(zu)));
-    // Critically damped
-    crit.push(1-(1+w0*t)*Math.exp(-w0*t));
-    // Overdamped
-    const ao=zo*w0,s1o=-ao+Math.sqrt(ao*ao-w0*w0),s2o=-ao-Math.sqrt(ao*ao-w0*w0);
-    over.push(1+s2o/(s1o-s2o)*Math.exp(s1o*t)+s1o/(s2o-s1o)*Math.exp(s2o*t));
-  }
-  new Chart(ctx,{type:'line',data:{labels,datasets:[
-    {label:'Underdamped (ζ=0.2)',data:under,borderColor:'#5A3EED',borderWidth:2,pointRadius:0,fill:false},
-    {label:'Critically Damped (ζ=1.0)',data:crit,borderColor:'#D4A017',borderWidth:2,pointRadius:0,fill:false},
-    {label:'Overdamped (ζ=3.0)',data:over,borderColor:'#E53935',borderWidth:2,pointRadius:0,fill:false}
-  ]},options:{responsive:true,plugins:{title:{display:true,text:'Three Damping Regimes (ω₀=5 rad/s)',font:{size:14},color:'#333'}},scales:{x:{title:{display:true,text:'Time (s)'},ticks:{maxTicksLimit:10}},y:{title:{display:true,text:'Voltage (V)'},min:-0.2,max:1.8}}}});
-})();
+    cr.push(1-(1+w0*t)*Math.exp(-w0*t));
+    var ao=zo*w0,d=Math.sqrt(ao*ao-w0*w0),s1=-ao+d,s2=-ao-d;
+    over.push(1+s2/(s1-s2)*Math.exp(s1*t)+s1/(s2-s1)*Math.exp(s2*t));ss.push(1);}
+  var ds=[
+    {label:'Underdamped (ζ='+zu.toFixed(2)+') — oscillates',data:under,borderColor:'#5A3EED',borderWidth:2.5,pointRadius:0,fill:false},
+    {label:'Critically Damped (ζ=1.0) — fastest, no overshoot',data:cr,borderColor:'#D4A017',borderWidth:2.5,pointRadius:0,fill:false},
+    {label:'Overdamped (ζ='+zo.toFixed(1)+') — slow, no oscillation',data:over,borderColor:'#E53935',borderWidth:2.5,pointRadius:0,fill:false},
+    {label:'Steady State',data:ss,borderColor:'#999',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false}
+  ];
+  if(dcChart){dcChart.data.labels=labels;dcChart.data.datasets=ds;dcChart.update();}
+  else{dcChart=new Chart(document.getElementById('dampingCanvas'),{type:'line',data:{labels:labels,datasets:ds},options:{responsive:true,animation:{duration:0},plugins:{title:{display:true,text:'Three Damping Regimes Comparison',font:{size:14},color:'#333'},legend:{labels:{font:{size:10}}}},scales:{x:{title:{display:true,text:'Time (s)'},ticks:{maxTicksLimit:10,font:{size:10}}},y:{title:{display:true,text:'Voltage (V)'},min:-0.3,max:2.0}}}});}
+}
+drawDC();
 </script>
 
 ## Resonant Frequency: When Circuits Sing
@@ -458,25 +507,36 @@ With no losses (R = 0), this would continue forever. With resistance, some energ
 
 #### Diagram: Series RLC Resonance Explorer
 
-<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:10px; margin:1rem 0;">
-<canvas id="resonanceCanvas" width="690" height="380"></canvas>
+<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px; margin:1rem 0;">
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:6px;">
+<label style="font-size:0.9em;">R (Ω): <input type="range" id="resR" min="1" max="200" value="10" step="1" oninput="drawRes()"> <strong id="resRv">10</strong></label>
+<label style="font-size:0.9em;">L (mH): <input type="range" id="resL" min="1" max="100" value="10" step="1" oninput="drawRes()"> <strong id="resLv">10</strong></label>
+<label style="font-size:0.9em;">C (μF): <input type="range" id="resC" min="0.1" max="10" value="1" step="0.1" oninput="drawRes()"> <strong id="resCv">1.0</strong></label>
+</div>
+<canvas id="resonanceCanvas" width="690" height="340"></canvas>
+<div id="resInfo" style="font-size:0.9em;margin-top:4px;padding:6px;background:#F8F6FF;border-radius:6px;"></div>
 </div>
 <script>
-(function(){
-  const ctx=document.getElementById('resonanceCanvas').getContext('2d');
-  const R=10,L=0.01,C=1e-6;
-  const f0=1/(2*Math.PI*Math.sqrt(L*C)),Q=(1/R)*Math.sqrt(L/C),BW=f0/Q;
-  const fMin=f0*0.1,fMax=f0*10,N=300,labels=[],mag=[];
-  let peak=0;
-  for(let i=0;i<=N;i++){
-    const f=fMin*Math.pow(fMax/fMin,i/N);labels.push(f.toFixed(0));
-    const XL=2*Math.PI*f*L,XC=1/(2*Math.PI*f*C);
-    const H=1/Math.sqrt(R*R+(XL-XC)*(XL-XC));
-    if(H>peak)peak=H; mag.push(H);
-  }
-  for(let i=0;i<mag.length;i++)mag[i]/=peak; // normalize
-  new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'|I/V| Normalized',data:mag,borderColor:'#5A3EED',borderWidth:2,pointRadius:0,fill:false}]},options:{responsive:true,plugins:{title:{display:true,text:'Series RLC Resonance (f₀='+f0.toFixed(0)+'Hz, Q='+Q.toFixed(1)+', BW='+BW.toFixed(0)+'Hz)',font:{size:14},color:'#333'}},scales:{x:{title:{display:true,text:'Frequency (Hz)'},ticks:{maxTicksLimit:10}},y:{title:{display:true,text:'Normalized |I|'},min:0,max:1.1}}}});
-})();
+var resChart=null;
+function drawRes(){
+  var R=+document.getElementById('resR').value,Lm=+document.getElementById('resL').value,Cu=+document.getElementById('resC').value;
+  document.getElementById('resRv').textContent=R;document.getElementById('resLv').textContent=Lm;document.getElementById('resCv').textContent=Cu.toFixed(1);
+  var L=Lm*1e-3,C=Cu*1e-6,f0=1/(2*Math.PI*Math.sqrt(L*C)),Q=(1/R)*Math.sqrt(L/C),BW=f0/Q;
+  var fMin=f0*0.05,fMax=f0*20,N=350,labels=[],mag=[],db3Line=[];
+  var peak=0;
+  for(var i=0;i<=N;i++){var f=fMin*Math.pow(fMax/fMin,i/N);labels.push(f.toFixed(0));
+    var XL=2*Math.PI*f*L,XC=1/(2*Math.PI*f*C),H=1/Math.sqrt(R*R+(XL-XC)*(XL-XC));
+    if(H>peak)peak=H;mag.push(H);}
+  for(var i=0;i<mag.length;i++){mag[i]/=peak;db3Line.push(0.707);}
+  var ds=[
+    {label:'Normalized |I/V|',data:mag,borderColor:'#5A3EED',borderWidth:2.5,pointRadius:0,fill:false},
+    {label:'-3dB (0.707)',data:db3Line,borderColor:'#E53935',borderWidth:1,borderDash:[5,5],pointRadius:0,fill:false}
+  ];
+  if(resChart){resChart.data.labels=labels;resChart.data.datasets=ds;resChart.update();}
+  else{resChart=new Chart(document.getElementById('resonanceCanvas'),{type:'line',data:{labels:labels,datasets:ds},options:{responsive:true,animation:{duration:0},plugins:{title:{display:true,text:'Series RLC Resonance Explorer',font:{size:14},color:'#333'},legend:{labels:{font:{size:10}}}},scales:{x:{title:{display:true,text:'Frequency (Hz)'},ticks:{maxTicksLimit:10,font:{size:10}}},y:{title:{display:true,text:'Normalized |I|'},min:0,max:1.15}}}});}
+  document.getElementById('resInfo').innerHTML='<b style="color:#5A3EED">f₀ = '+f0.toFixed(1)+' Hz</b> &nbsp;|&nbsp; <b style="color:#D4A017">Q = '+Q.toFixed(2)+'</b> &nbsp;|&nbsp; <b>BW = '+BW.toFixed(1)+' Hz</b> &nbsp;|&nbsp; f_low ≈ '+(f0-BW/2).toFixed(1)+' Hz, f_high ≈ '+(f0+BW/2).toFixed(1)+' Hz';
+}
+drawRes();
 </script>
 
 ## Quality Factor: How Sharp is the Resonance?
@@ -535,29 +595,36 @@ Notice that Q has opposite relationships with R for series vs. parallel circuits
 
 #### Diagram: Quality Factor and Bandwidth
 
-<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:10px; margin:1rem 0;">
-<canvas id="qfactorCanvas" width="690" height="380"></canvas>
+<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px; margin:1rem 0;">
+<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px;">
+<label style="font-size:0.9em;">Highlight Q: <input type="range" id="qfQ" min="1" max="100" value="10" step="1" oninput="drawQF()"> <strong id="qfQv">10</strong></label>
+<label style="font-size:0.9em;">f₀ (Hz): <input type="range" id="qfF" min="100" max="10000" value="1000" step="100" oninput="drawQF()"> <strong id="qfFv">1000</strong></label>
+</div>
+<canvas id="qfactorCanvas" width="690" height="340"></canvas>
+<div id="qfInfo" style="font-size:0.9em;margin-top:4px;padding:6px;background:#FFF8E1;border-radius:6px;"></div>
 </div>
 <script>
-(function(){
-  const ctx=document.getElementById('qfactorCanvas').getContext('2d');
-  const f0=1000,N=300,fMin=100,fMax=10000;
-  const Qs=[2,5,20,50],colors=['#E53935','#43A047','#1E88E5','#FF9800'];
-  const labels=[];
-  const datasets=Qs.map((Q,idx)=>{
-    const data=[];
-    for(let i=0;i<=N;i++){
-      const f=fMin*Math.pow(fMax/fMin,i/N);
-      if(idx===0)labels.push(f.toFixed(0));
-      const r=f/f0-f0/f; data.push(1/Math.sqrt(1+Q*Q*r*r));
-    }
-    return{label:'Q='+Q,data,borderColor:colors[idx],borderWidth:2,pointRadius:0,fill:false};
-  });
-  // Add -3dB line
-  const db3=Array(N+1).fill(0.707);
-  datasets.push({label:'-3dB (0.707)',data:db3,borderColor:'#999',borderWidth:1,borderDash:[5,5],pointRadius:0,fill:false});
-  new Chart(ctx,{type:'line',data:{labels,datasets},options:{responsive:true,plugins:{title:{display:true,text:'Quality Factor: Resonance Sharpness (f₀=1000 Hz)',font:{size:14},color:'#333'}},scales:{x:{title:{display:true,text:'Frequency (Hz)'},ticks:{maxTicksLimit:10}},y:{title:{display:true,text:'Normalized Response'},min:0,max:1.1}}}});
-})();
+var qfChart=null;
+function drawQF(){
+  var Qh=+document.getElementById('qfQ').value,f0=+document.getElementById('qfF').value;
+  document.getElementById('qfQv').textContent=Qh;document.getElementById('qfFv').textContent=f0;
+  var fMin=f0*0.1,fMax=f0*10,N=300,labels=[];
+  var fixedQ=[{q:2,c:'#E5393588'},{q:10,c:'#43A04788'},{q:50,c:'#FF980088'}];
+  var ds=fixedQ.map(function(qo){var data=[];
+    for(var i=0;i<=N;i++){var f=fMin*Math.pow(fMax/fMin,i/N);if(qo===fixedQ[0])labels.push(f.toFixed(0));
+      var r=f/f0-f0/f;data.push(1/Math.sqrt(1+qo.q*qo.q*r*r));}
+    return{label:'Q='+qo.q,data:data,borderColor:qo.c,borderWidth:1.5,pointRadius:0,fill:false};});
+  // Highlighted Q
+  var hData=[],db3=[];
+  for(var i=0;i<=N;i++){var f=fMin*Math.pow(fMax/fMin,i/N),r=f/f0-f0/f;hData.push(1/Math.sqrt(1+Qh*Qh*r*r));db3.push(0.707);}
+  ds.push({label:'Highlight Q='+Qh,data:hData,borderColor:'#5A3EED',borderWidth:3,pointRadius:0,fill:false});
+  ds.push({label:'-3dB (0.707)',data:db3,borderColor:'#E53935',borderWidth:1,borderDash:[5,5],pointRadius:0,fill:false});
+  if(qfChart){qfChart.data.labels=labels;qfChart.data.datasets=ds;qfChart.update();}
+  else{qfChart=new Chart(document.getElementById('qfactorCanvas'),{type:'line',data:{labels:labels,datasets:ds},options:{responsive:true,animation:{duration:0},plugins:{title:{display:true,text:'Quality Factor and Bandwidth',font:{size:14},color:'#333'},legend:{labels:{font:{size:10}}}},scales:{x:{title:{display:true,text:'Frequency (Hz)'},ticks:{maxTicksLimit:10,font:{size:10}}},y:{title:{display:true,text:'Normalized Response'},min:0,max:1.1}}}});}
+  var BW=f0/Qh;
+  document.getElementById('qfInfo').innerHTML='<b style="color:#5A3EED">Q = '+Qh+'</b> &nbsp;→&nbsp; <b>BW = '+BW.toFixed(1)+' Hz</b> &nbsp;|&nbsp; ζ = '+(1/(2*Qh)).toFixed(4)+' &nbsp;|&nbsp; Higher Q = sharper peak, narrower bandwidth';
+}
+drawQF();
 </script>
 
 ## Pulse Response: Ringing and Transients
@@ -587,24 +654,35 @@ When an underdamped RLC circuit receives a pulse:
 
 #### Diagram: Pulse Response and Ringing
 
-<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:10px; margin:1rem 0;">
-<canvas id="pulseCanvas" width="690" height="380"></canvas>
+<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px; margin:1rem 0;">
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:6px;">
+<label style="font-size:0.9em;">ζ: <input type="range" id="prZ" min="0.02" max="0.5" value="0.1" step="0.02" oninput="drawPR()"> <strong id="prZv">0.10</strong></label>
+<label style="font-size:0.9em;">ω₀: <input type="range" id="prW" min="5" max="30" value="10" step="1" oninput="drawPR()"> <strong id="prWv">10</strong></label>
+<label style="font-size:0.9em;">Pulse (s): <input type="range" id="prP" min="0.1" max="2" value="0.5" step="0.05" oninput="drawPR()"> <strong id="prPv">0.50</strong></label>
+</div>
+<canvas id="pulseCanvas" width="690" height="340"></canvas>
+<div id="prInfo" style="font-size:0.85em;margin-top:4px;color:#555;"></div>
 </div>
 <script>
-(function(){
-  const ctx=document.getElementById('pulseCanvas').getContext('2d');
-  const w0=10,zeta=0.1,alpha=zeta*w0,wd=w0*Math.sqrt(1-zeta*zeta),phi=Math.acos(zeta),pw=0.5;
-  function step(t){if(t<0)return 0;return 1-(1/Math.sqrt(1-zeta*zeta))*Math.exp(-alpha*t)*Math.sin(wd*t+phi);}
-  const N=400,tMax=4,labels=[],pulse=[],resp=[];
-  for(let i=0;i<=N;i++){const t=i*tMax/N;labels.push(t.toFixed(3));
-    pulse.push(t>=0&&t<=pw?1:0);
-    resp.push(step(t)-step(t-pw));
-  }
-  new Chart(ctx,{type:'line',data:{labels,datasets:[
-    {label:'Input Pulse',data:pulse,borderColor:'#D4A017',borderWidth:2,pointRadius:0,fill:false},
-    {label:'RLC Response (ζ=0.1)',data:resp,borderColor:'#5A3EED',borderWidth:2,pointRadius:0,fill:false}
-  ]},options:{responsive:true,plugins:{title:{display:true,text:'Pulse Response and Ringing (ω₀=10, ζ=0.1, pulse=0.5s)',font:{size:14},color:'#333'}},scales:{x:{title:{display:true,text:'Time (s)'},ticks:{maxTicksLimit:10}},y:{title:{display:true,text:'Amplitude'},min:-1.5,max:2.0}}}});
-})();
+var prChart=null;
+function drawPR(){
+  var z=+document.getElementById('prZ').value,w0=+document.getElementById('prW').value,pw=+document.getElementById('prP').value;
+  document.getElementById('prZv').textContent=z.toFixed(2);document.getElementById('prWv').textContent=w0;document.getElementById('prPv').textContent=pw.toFixed(2);
+  var a=z*w0,wd=w0*Math.sqrt(1-z*z),phi=Math.acos(z);
+  function stp(t){if(t<0)return 0;return 1-(1/Math.sqrt(1-z*z))*Math.exp(-a*t)*Math.sin(wd*t+phi);}
+  var tMax=Math.max(pw+5/a,3),N=400,labels=[],pulse=[],resp=[],zero=[];
+  for(var i=0;i<=N;i++){var t=i*tMax/N;labels.push(t.toFixed(3));
+    pulse.push(t>=0&&t<=pw?1:0);resp.push(stp(t)-stp(t-pw));zero.push(0);}
+  var ds=[
+    {label:'Input Pulse',data:pulse,borderColor:'#D4A017',borderWidth:2,pointRadius:0,fill:false,stepped:true},
+    {label:'RLC Output (ringing)',data:resp,borderColor:'#5A3EED',borderWidth:2.5,pointRadius:0,fill:false},
+    {label:'',data:zero,borderColor:'#ccc',borderWidth:0.5,borderDash:[2,2],pointRadius:0,fill:false}
+  ];
+  if(prChart){prChart.data.labels=labels;prChart.data.datasets=ds;prChart.update();}
+  else{prChart=new Chart(document.getElementById('pulseCanvas'),{type:'line',data:{labels:labels,datasets:ds},options:{responsive:true,animation:{duration:0},plugins:{title:{display:true,text:'Pulse Response and Ringing',font:{size:14},color:'#333'},legend:{labels:{font:{size:10},filter:function(it){return it.text!=='';}}}},scales:{x:{title:{display:true,text:'Time (s)'},ticks:{maxTicksLimit:10,font:{size:10}}},y:{title:{display:true,text:'Amplitude'},min:-1.8,max:2.2}}}});}
+  document.getElementById('prInfo').innerHTML='ω_d = '+wd.toFixed(2)+' rad/s &nbsp;|&nbsp; Ringing period ≈ '+(2*Math.PI/wd).toFixed(3)+' s &nbsp;|&nbsp; Settling ~'+(4/a).toFixed(2)+' s after pulse ends';
+}
+drawPR();
 </script>
 
 ## Energy Exchange in RLC Circuits
@@ -632,29 +710,54 @@ With resistance:
 
 #### Diagram: Energy Exchange Animation
 
-<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:10px; margin:1rem 0;">
-<canvas id="energyCanvas" width="690" height="380"></canvas>
+<div style="background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px; margin:1rem 0;">
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:6px;align-items:center;">
+<label style="font-size:0.9em;">ζ: <input type="range" id="enZ" min="0.02" max="0.5" value="0.1" step="0.02" oninput="resetEn()"> <strong id="enZv">0.10</strong></label>
+<label style="font-size:0.9em;">ω₀: <input type="range" id="enW" min="2" max="15" value="5" step="0.5" oninput="resetEn()"> <strong id="enWv">5.0</strong></label>
+<button id="enBtn" onclick="toggleEn()" style="padding:4px 14px;border:1px solid #5A3EED;border-radius:4px;background:#F8F6FF;color:#5A3EED;cursor:pointer;font-weight:600;">▶ Play</button>
+</div>
+<canvas id="energyCanvas" width="690" height="350"></canvas>
+<div style="display:flex;gap:20px;margin-top:6px;">
+<div style="flex:1;text-align:center;padding:8px;background:#E3F2FD;border-radius:6px;"><strong>Capacitor E<sub>C</sub></strong><br><span id="enEc" style="font-size:1.3em;color:#1565C0;">100%</span></div>
+<div style="flex:1;text-align:center;padding:8px;background:#FFF3E0;border-radius:6px;"><strong>Inductor E<sub>L</sub></strong><br><span id="enEl" style="font-size:1.3em;color:#E65100;">0%</span></div>
+<div style="flex:1;text-align:center;padding:8px;background:#FFEBEE;border-radius:6px;"><strong>Dissipated</strong><br><span id="enEd" style="font-size:1.3em;color:#C62828;">0%</span></div>
+</div>
 </div>
 <script>
-(function(){
-  const ctx=document.getElementById('energyCanvas').getContext('2d');
-  const w0=5,zeta=0.1,alpha=zeta*w0,wd=w0*Math.sqrt(1-zeta*zeta);
-  const L=1,C=1/(w0*w0),V0=10;
-  const N=300,tMax=8/alpha,labels=[],ec=[],el=[],etot=[];
-  const E0=0.5*C*V0*V0;
-  for(let i=0;i<=N;i++){const t=i*tMax/N;labels.push(t.toFixed(3));
-    const v=V0*Math.exp(-alpha*t)*Math.cos(wd*t);
-    const dvdt=V0*Math.exp(-alpha*t)*(-alpha*Math.cos(wd*t)-wd*Math.sin(wd*t));
-    const iL=C*dvdt;
-    const Ec=0.5*C*v*v/E0, El=0.5*L*iL*iL/E0;
-    ec.push(Ec); el.push(El); etot.push(Ec+El);
-  }
-  new Chart(ctx,{type:'line',data:{labels,datasets:[
-    {label:'Capacitor Energy (E_C)',data:ec,borderColor:'#2196F3',backgroundColor:'rgba(33,150,243,0.15)',borderWidth:2,pointRadius:0,fill:true},
-    {label:'Inductor Energy (E_L)',data:el,borderColor:'#FF9800',backgroundColor:'rgba(255,152,0,0.15)',borderWidth:2,pointRadius:0,fill:true},
-    {label:'Total Energy',data:etot,borderColor:'#E53935',borderWidth:1,borderDash:[5,5],pointRadius:0,fill:false}
-  ]},options:{responsive:true,plugins:{title:{display:true,text:'Energy Exchange in RLC Circuit (ζ=0.1, ω₀=5)',font:{size:14},color:'#333'}},scales:{x:{title:{display:true,text:'Time (s)'},ticks:{maxTicksLimit:10}},y:{title:{display:true,text:'Normalized Energy'},min:0,max:1.1}}}});
-})();
+var enChart=null,enAnim=null,enIdx=0,enPlaying=false;
+var enData={labels:[],ec:[],el:[],etot:[]};
+function computeEn(){
+  var z=+document.getElementById('enZ').value,w0=+document.getElementById('enW').value;
+  document.getElementById('enZv').textContent=z.toFixed(2);document.getElementById('enWv').textContent=w0.toFixed(1);
+  var a=z*w0,wd=w0*Math.sqrt(1-z*z),L=1,C=1/(w0*w0),V0=10,E0=0.5*C*V0*V0;
+  var tMax=8/a,N=400;enData={labels:[],ec:[],el:[],etot:[]};
+  for(var i=0;i<=N;i++){var t=i*tMax/N;enData.labels.push(t.toFixed(3));
+    var v=V0*Math.exp(-a*t)*Math.cos(wd*t);
+    var dvdt=V0*Math.exp(-a*t)*(-a*Math.cos(wd*t)-wd*Math.sin(wd*t));
+    var iL=C*dvdt,Ec=0.5*C*v*v/E0,El=0.5*L*iL*iL/E0;
+    enData.ec.push(Ec);enData.el.push(El);enData.etot.push(Ec+El);}
+}
+function drawEnFrame(){
+  var ec=enData.ec.slice(0,enIdx+1),el=enData.el.slice(0,enIdx+1),et=enData.etot.slice(0,enIdx+1),lb=enData.labels.slice(0,enIdx+1);
+  // Pad rest with null
+  var pad=enData.labels.length-lb.length;
+  var ds=[
+    {label:'Capacitor Energy',data:ec.concat(Array(pad).fill(null)),borderColor:'#2196F3',backgroundColor:'rgba(33,150,243,0.2)',borderWidth:2,pointRadius:0,fill:true},
+    {label:'Inductor Energy',data:el.concat(Array(pad).fill(null)),borderColor:'#FF9800',backgroundColor:'rgba(255,152,0,0.2)',borderWidth:2,pointRadius:0,fill:true},
+    {label:'Total Energy (decaying)',data:et.concat(Array(pad).fill(null)),borderColor:'#E53935',borderWidth:1.5,borderDash:[5,5],pointRadius:0,fill:false}
+  ];
+  if(enChart){enChart.data.labels=enData.labels;enChart.data.datasets=ds;enChart.update();}
+  else{enChart=new Chart(document.getElementById('energyCanvas'),{type:'line',data:{labels:enData.labels,datasets:ds},options:{responsive:true,animation:{duration:0},plugins:{title:{display:true,text:'Energy Exchange in RLC Circuit (animated)',font:{size:14},color:'#333'},legend:{labels:{font:{size:10}}}},scales:{x:{title:{display:true,text:'Time (s)'},ticks:{maxTicksLimit:10,font:{size:10}}},y:{title:{display:true,text:'Normalized Energy'},min:0,max:1.1}}}});}
+  // Update bars
+  var ecv=enData.ec[enIdx]||0,elv=enData.el[enIdx]||0,etv=enData.etot[enIdx]||1,dis=Math.max(0,1-etv);
+  document.getElementById('enEc').textContent=(ecv*100).toFixed(0)+'%';
+  document.getElementById('enEl').textContent=(elv*100).toFixed(0)+'%';
+  document.getElementById('enEd').textContent=(dis*100).toFixed(0)+'%';
+}
+function stepEn(){if(!enPlaying)return;enIdx=Math.min(enIdx+2,enData.labels.length-1);drawEnFrame();if(enIdx<enData.labels.length-1)enAnim=requestAnimationFrame(stepEn);else{enPlaying=false;document.getElementById('enBtn').textContent='↺ Replay';}}
+function toggleEn(){if(enPlaying){enPlaying=false;cancelAnimationFrame(enAnim);document.getElementById('enBtn').textContent='▶ Play';}else{if(enIdx>=enData.labels.length-1)enIdx=0;enPlaying=true;document.getElementById('enBtn').textContent='⏸ Pause';stepEn();}}
+function resetEn(){enPlaying=false;cancelAnimationFrame(enAnim);document.getElementById('enBtn').textContent='▶ Play';computeEn();enIdx=enData.labels.length-1;drawEnFrame();}
+computeEn();enIdx=enData.labels.length-1;drawEnFrame();
 </script>
 
 ## Design Applications
