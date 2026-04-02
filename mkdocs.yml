@@ -35,16 +35,17 @@ extra_css: []
 
 nav:
   - Home: index.md
-  - Chapter 1: chapters/ch1.md
-  - Chapter 2: chapters/ch2.md
-  - Chapter 3:
-    - Content: chapters/ch3.md
-    - Quiz: chapters/ch3-quiz.md
-    - Problems: chapters/ch3-problems.md
-    - Glossary: chapters/ch3-glossary.md
-    - References: chapters/ch3-references.md
-  - Chapter 4: chapters/ch4.md
-  - Chapter 7 - Second-Order RLC Circuits:
-    - Content: chapters/ch7.md
-    - RLC Circuit Simulator: sims/rlc-circuit/index.md
-    - Natural Frequency Calculator: sims/natural-frequency-calculator/index.md
+  - Chapters:
+    - Chapter 1: chapters/ch1.md
+    - Chapter 2: chapters/ch2.md
+    - Chapter 3:
+      - Content: chapters/ch3.md
+      - Quiz: chapters/ch3-quiz.md
+      - Problems: chapters/ch3-problems.md
+      - Glossary: chapters/ch3-glossary.md
+      - References: chapters/ch3-references.md
+    - Chapter 4: chapters/ch4.md
+    - Chapter 7 - Second-Order RLC Circuits:
+      - Content: chapters/ch7.md
+      - RLC Circuit Simulator: sims/rlc-circuit/index.md
+      - Natural Frequency Calculator: sims/natural-frequency-calculator/index.md
