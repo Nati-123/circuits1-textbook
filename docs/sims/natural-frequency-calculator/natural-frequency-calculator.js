@@ -5,16 +5,34 @@
 // MicroSim template version 2026.02
 
 // global variables for width and height
-let containerWidth;
-let canvasWidth = 400;
+let canvasWidth = 710;
 let drawHeight = 400;
 let controlHeight = 80;
 let canvasHeight = drawHeight + controlHeight;
-let containerHeight = canvasHeight;
 
 let margin = 25;
 let sliderLeftMargin = 200;
 let defaultTextSize = 16;
+
+// Canvas-drawn slider class for iframe compatibility
+class CanvasSlider {
+  constructor(x, y, w, min, max, value, label) {
+    this.x = x; this.y = y; this.w = w;
+    this.min = min; this.max = max; this.value = value;
+    this.label = label; this.dragging = false;
+  }
+  get thumbX() { return this.x + ((this.value - this.min) / (this.max - this.min)) * this.w; }
+  display() {
+    stroke(180); strokeWeight(2); line(this.x, this.y, this.x + this.w, this.y);
+    fill('#5A3EED'); noStroke(); ellipse(this.thumbX, this.y, 14, 14);
+  }
+  pressed(mx, my) { if (dist(mx, my, this.thumbX, this.y) < 10) this.dragging = true; }
+  dragged(mx) {
+    if (!this.dragging) return;
+    this.value = constrain(((mx - this.x) / this.w) * (this.max - this.min) + this.min, this.min, this.max);
+  }
+  released() { this.dragging = false; }
+}
 
 // Sliders
 let inductanceSlider;
@@ -32,33 +50,25 @@ let C_min = 1e-8;
 let C_max = 1e-4;
 
 // Compute default slider positions for L=10mH and C=1uF
-// L=10mH=0.01H: t = (log10(0.01)-log10(1e-4))/(log10(0.1)-log10(1e-4)) = (-2-(-4))/(-1-(-4)) = 2/3
 let defaultL = Math.round(sliderSteps * 2 / 3); // 667
-// C=1uF=1e-6F: t = (log10(1e-6)-log10(1e-8))/(log10(1e-4)-log10(1e-8)) = (-6-(-8))/(-4-(-8)) = 2/4
 let defaultC = Math.round(sliderSteps * 2 / 4); // 500
 
 function setup() {
-  updateCanvasSize();
-  const canvas = createCanvas(containerWidth, containerHeight);
-  var mainElement = document.querySelector('main');
-  canvas.parent(mainElement);
-
+  const canvas = createCanvas(canvasWidth, canvasHeight);
+  canvas.parent(document.querySelector('main'));
   textSize(defaultTextSize);
 
-  // Create logarithmic sliders (linear 0-1000, mapped to log scale)
-  inductanceSlider = createSlider(0, sliderSteps, defaultL, 1);
-  inductanceSlider.position(sliderLeftMargin, drawHeight + 5);
-  inductanceSlider.size(canvasWidth - sliderLeftMargin - margin);
-
-  capacitanceSlider = createSlider(0, sliderSteps, defaultC, 1);
-  capacitanceSlider.position(sliderLeftMargin, drawHeight + 40);
-  capacitanceSlider.size(canvasWidth - sliderLeftMargin - margin);
-
-  describe('Interactive calculator showing natural frequency of an LC circuit. Adjust inductance and capacitance sliders to see how natural frequency changes.', LABEL);
+  let sliderW = canvasWidth - sliderLeftMargin - margin;
+  inductanceSlider = new CanvasSlider(sliderLeftMargin, drawHeight + 15, sliderW, 0, sliderSteps, defaultL, 'L');
+  capacitanceSlider = new CanvasSlider(sliderLeftMargin, drawHeight + 50, sliderW, 0, sliderSteps, defaultC, 'C');
 }
 
+function mousePressed() { inductanceSlider.pressed(mouseX, mouseY); capacitanceSlider.pressed(mouseX, mouseY); }
+function mouseDragged() { inductanceSlider.dragged(mouseX); capacitanceSlider.dragged(mouseX); }
+function mouseReleased() { inductanceSlider.released(); capacitanceSlider.released(); }
+
 function draw() {
-  updateCanvasSize();
+  background(255);
 
   // Drawing area background
   fill('aliceblue');
@@ -72,8 +82,8 @@ function draw() {
   rect(0, drawHeight, canvasWidth, controlHeight);
 
   // Get logarithmic values from sliders
-  let L = logMap(inductanceSlider.value(), 0, sliderSteps, L_min, L_max);
-  let C = logMap(capacitanceSlider.value(), 0, sliderSteps, C_min, C_max);
+  let L = logMap(inductanceSlider.value, 0, sliderSteps, L_min, L_max);
+  let C = logMap(capacitanceSlider.value, 0, sliderSteps, C_min, C_max);
 
   // Calculate natural frequency
   let LC = L * C;
@@ -246,6 +256,10 @@ function draw() {
   textSize(defaultTextSize);
   text('L: ' + L_display, 10, drawHeight + 15);
   text('C: ' + C_display, 10, drawHeight + 50);
+
+  // Draw canvas sliders
+  inductanceSlider.display();
+  capacitanceSlider.display();
 }
 
 // Map a linear slider value (0-1000) to a logarithmic scale
@@ -297,17 +311,3 @@ function formatWithUnit(value, unit) {
   return value.toExponential(3) + ' ' + unit;
 }
 
-// Responsive resize
-function windowResized() {
-  updateCanvasSize();
-  resizeCanvas(containerWidth, containerHeight);
-  inductanceSlider.size(canvasWidth - sliderLeftMargin - margin);
-  capacitanceSlider.size(canvasWidth - sliderLeftMargin - margin);
-  redraw();
-}
-
-function updateCanvasSize() {
-  const container = document.querySelector('main').getBoundingClientRect();
-  containerWidth = Math.floor(container.width);
-  canvasWidth = containerWidth;
-}

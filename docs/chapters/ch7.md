@@ -112,7 +112,7 @@ Notice that the undamped natural frequency \(\omega_0\) is the same for both con
 
 #### Diagram: Series vs Parallel RLC Configuration
 
-<iframe src="../sims/rlc-circuit/main.html" width="100%" height="670px" scrolling="no" style="overflow: hidden;"></iframe>
+<iframe src="../sims/rlc-circuit/main.html" width="100%" height="670px" scrolling="no" style="background: #fff; border: 1px solid #e0e0e0;"></iframe>
 
 ## The Characteristic Equation: Finding the Roots
 
@@ -162,7 +162,7 @@ The natural frequency depends only on the energy storage elements (L and C), not
 
 #### Diagram: Natural Frequency Calculator
 
-<iframe src="../sims/natural-frequency-calculator/main.html" width="100%" height="500px" scrolling="no" style="overflow: hidden;"></iframe>
+<iframe src="../sims/natural-frequency-calculator/main.html" width="100%" height="500px" scrolling="no" style="background: #fff; border: 1px solid #e0e0e0;"></iframe>
 
 ## Damping Ratio: How Quickly the Drama Fades
 
@@ -217,7 +217,7 @@ Think of overdamped response like a door closer that's been adjusted too tightâ€
 
 #### Diagram: Overdamped Step Response
 
-<iframe src="../sims/overdamped-response/main.html" width="100%" height="450px" scrolling="no" style="overflow: hidden;"></iframe>
+<iframe src="../sims/overdamped-response/main.html" width="100%" height="450px" scrolling="no" style="background: #fff; border: 1px solid #e0e0e0;"></iframe>
 
 ## Underdamped Response: The Exciting One
 
@@ -262,7 +262,7 @@ Notice that light damping barely affects the frequency, but heavy damping signif
 
 #### Diagram: Underdamped Oscillation Anatomy
 
-<iframe src="../sims/underdamped-oscillation/main.html" width="100%" height="500px" scrolling="no" style="overflow: hidden;"></iframe>
+<iframe src="../sims/underdamped-oscillation/main.html" width="100%" height="500px" scrolling="no" style="background: #fff; border: 1px solid #e0e0e0;"></iframe>
 
 ### Overshoot and Settling Time
 
@@ -318,7 +318,7 @@ Critical damping is often the design target for:
 
 #### Diagram: Three Damping Regimes Comparison
 
-<iframe src="../sims/damping-comparison/main.html" width="100%" height="500px" scrolling="no" style="overflow: hidden;"></iframe>
+<iframe src="../sims/damping-comparison/main.html" width="100%" height="500px" scrolling="no" style="background: #fff; border: 1px solid #e0e0e0;"></iframe>
 
 ## Resonant Frequency: When Circuits Sing
 
@@ -356,7 +356,7 @@ With no losses (R = 0), this would continue forever. With resistance, some energ
 
 #### Diagram: Series RLC Resonance Explorer
 
-<iframe src="../sims/series-resonance/main.html" width="100%" height="500px" scrolling="no" style="overflow: hidden;"></iframe>
+<iframe src="../sims/series-resonance/main.html" width="100%" height="500px" scrolling="no" style="background: #fff; border: 1px solid #e0e0e0;"></iframe>
 
 ## Quality Factor: How Sharp is the Resonance?
 
@@ -414,7 +414,7 @@ Notice that Q has opposite relationships with R for series vs. parallel circuits
 
 #### Diagram: Quality Factor and Bandwidth
 
-<iframe src="../sims/quality-factor/main.html" width="100%" height="500px" scrolling="no" style="overflow: hidden;"></iframe>
+<iframe src="../sims/quality-factor/main.html" width="100%" height="500px" scrolling="no" style="background: #fff; border: 1px solid #e0e0e0;"></iframe>
 
 ## Pulse Response: Ringing and Transients
 
@@ -443,7 +443,7 @@ When an underdamped RLC circuit receives a pulse:
 
 #### Diagram: Pulse Response and Ringing
 
-<iframe src="../sims/pulse-ringing/main.html" width="100%" height="450px" scrolling="no" style="overflow: hidden;"></iframe>
+<iframe src="../sims/pulse-ringing/main.html" width="100%" height="450px" scrolling="no" style="background: #fff; border: 1px solid #e0e0e0;"></iframe>
 
 ## Energy Exchange in RLC Circuits
 
@@ -470,7 +470,7 @@ With resistance:
 
 #### Diagram: Energy Exchange Animation
 
-<iframe src="../sims/energy-exchange/main.html" width="100%" height="500px" scrolling="no" style="overflow: hidden;"></iframe>
+<iframe src="../sims/energy-exchange/main.html" width="100%" height="500px" scrolling="no" style="background: #fff; border: 1px solid #e0e0e0;"></iframe>
 
 ## Design Applications
 
