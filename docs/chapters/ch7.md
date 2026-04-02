@@ -2,47 +2,54 @@
 
 # Chapter 7 — Second-Order Circuits and RLC Behavior
 
-<h2 style="color: #5A3EED !important; border-bottom: 2px solid #5A3EED; padding-bottom: 0.3rem; font-weight: 700; margin-top: 2rem;">Concepts Covered</h2>
+<div class="chapter-hero">
 
-<div class="concepts-box" markdown>
+<div class="hero-subtitle">Chapter 7</div>
 
-1. Second-Order Circuits
-2. RLC Circuit
-3. Overdamped Response
-4. Underdamped Response
-5. Critically Damped Response
-6. Damping Ratio
-7. Natural Frequency
-8. Pulse Response
-9. Resonant Frequency
-10. Quality Factor
+## When Circuits Get Dramatic
+
+<div class="hero-body">
+
+If first-order RC and RL circuits are like a polite conversation — one thing leads smoothly to another — then second-order RLC circuits are like a *heated debate*. Things swing back and forth, overshoot their targets, or oscillate indefinitely.
+
+When you put *both* energy storage elements in the same circuit, the energy sloshes back and forth between the electric field of the capacitor and the magnetic field of the inductor, like two friends tossing a ball. Add some resistance, and the ball gradually loses energy with each toss.
 
 </div>
 
-<h2 style="color: #5A3EED !important; border-bottom: 2px solid #5A3EED; padding-bottom: 0.3rem; font-weight: 700; margin-top: 2rem;">Prerequisites</h2>
+<ul class="hero-highlights">
+<li><strong>Oscillations</strong> — ring like a bell</li>
+<li><strong>Overshoot</strong> — rockets past the target before settling</li>
+<li><strong>Resonance</strong> — amplifies signals at specific frequencies</li>
+</ul>
 
-<div class="prereq-box" markdown>
+<p class="hero-cta">From radio tuners to shock absorbers to audio equalizers — all described by the same beautiful mathematics.</p>
 
-- **Chapter 5:** Passive Components: Resistors, Capacitors, and Inductors
-- **Chapter 6:** Transient Analysis of RC and RL Circuits
-
+<div class="hero-meta">
+<div class="hero-meta-card">
+<h3>10 Concepts Covered</h3>
+<ol>
+<li>Second-Order Circuits</li>
+<li>RLC Circuit</li>
+<li>Overdamped Response</li>
+<li>Underdamped Response</li>
+<li>Critically Damped Response</li>
+<li>Damping Ratio</li>
+<li>Natural Frequency</li>
+<li>Pulse Response</li>
+<li>Resonant Frequency</li>
+<li>Quality Factor</li>
+</ol>
+</div>
+<div class="hero-meta-card">
+<h3>Prerequisites</h3>
+<ul>
+<li><strong>Ch 5:</strong> Passive Components — R, L, C</li>
+<li><strong>Ch 6:</strong> Transient Analysis — RC &amp; RL Circuits</li>
+</ul>
+</div>
 </div>
 
----
-
-## Introduction: When Circuits Get Dramatic
-
-If first-order RC and RL circuits are like a polite conversation—one thing leads smoothly to another—then second-order RLC circuits are like a heated debate. Things can swing back and forth, overshoot their targets, or even oscillate indefinitely. Welcome to the world where circuits get *dramatic*.
-
-In Chapter 6, you learned how capacitors and inductors store and release energy exponentially. But what happens when you put *both* energy storage elements in the same circuit? The energy sloshes back and forth between the electric field of the capacitor and the magnetic field of the inductor, like two friends tossing a ball between them. Add some resistance, and the ball gradually loses energy with each toss until everyone gets tired.
-
-This energy exchange creates behaviors you won't see in simpler circuits:
-
-- **Oscillations** that ring like a bell
-- **Overshoot** that rockets past the target before settling back
-- **Resonance** that amplifies signals at specific frequencies
-
-Understanding these behaviors unlocks your ability to design everything from radio tuners to shock absorbers to audio equalizers. It's the physics of musical instruments, earthquake dampers, and your car's suspension—all described by the same beautiful mathematics.
+</div>
 
 ## Second-Order Circuits: The Mathematical Upgrade
 
