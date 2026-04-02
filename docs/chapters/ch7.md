@@ -1,12 +1,16 @@
-# Second-Order Circuits and RLC Behavior
+<div class="chapter-styled" markdown>
 
-## Summary
+# Chapter 7 — Second-Order Circuits and RLC Behavior
 
-This chapter extends transient analysis to second-order circuits containing resistors, inductors, and capacitors (RLC). Students will learn how these circuits can exhibit oscillatory behavior and how the damping ratio determines whether the response is overdamped, underdamped, or critically damped. The chapter introduces the natural frequency concept and analyzes both series and parallel RLC configurations. Understanding second-order systems prepares students for analyzing resonant circuits and filters.
+<h2 style="color: #5A3EED !important; border-bottom: 2px solid #5A3EED; padding-bottom: 0.3rem; font-weight: 700; margin-top: 2rem;">Summary</h2>
 
-## Concepts Covered
+<div class="summary-box" markdown>
+<p>This chapter extends transient analysis to second-order circuits containing resistors, inductors, and capacitors (RLC). Students will learn how these circuits can exhibit oscillatory behavior and how the damping ratio determines whether the response is overdamped, underdamped, or critically damped. The chapter introduces the natural frequency concept and analyzes both series and parallel RLC configurations. Understanding second-order systems prepares students for analyzing resonant circuits and filters.</p>
+</div>
 
-This chapter covers the following 10 concepts from the learning graph:
+<h2 style="color: #5A3EED !important; border-bottom: 2px solid #5A3EED; padding-bottom: 0.3rem; font-weight: 700; margin-top: 2rem;">Concepts Covered</h2>
+
+<div class="concepts-box" markdown>
 
 1. Second-Order Circuits
 2. RLC Circuit
@@ -19,12 +23,16 @@ This chapter covers the following 10 concepts from the learning graph:
 9. Resonant Frequency
 10. Quality Factor
 
-## Prerequisites
+</div>
 
-This chapter builds on concepts from:
+<h2 style="color: #5A3EED !important; border-bottom: 2px solid #5A3EED; padding-bottom: 0.3rem; font-weight: 700; margin-top: 2rem;">Prerequisites</h2>
 
-- Chapter 5: Passive Components: Resistors, Capacitors, and Inductors
-- Chapter 6: Transient Analysis of RC and RL Circuits
+<div class="prereq-box" markdown>
+
+- **Chapter 5:** Passive Components: Resistors, Capacitors, and Inductors
+- **Chapter 6:** Transient Analysis of RC and RL Circuits
+
+</div>
 
 ---
 
@@ -1028,3 +1036,5 @@ Second-order RLC circuits introduce the rich dynamics of oscillation and resonan
 These concepts prepare you for AC analysis, where sinusoidal signals interact with resonant circuits to create the filters, tuners, and oscillators that make modern electronics possible. The dramatic behavior of second-order circuits—the ringing, the resonance, the critical balance between too much and too little damping—is where circuit analysis becomes genuinely exciting.
 
 Next chapter, we'll see how AC signals and sinusoidal analysis build on these foundations to analyze circuits in the frequency domain.
+
+</div>
