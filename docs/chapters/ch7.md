@@ -210,7 +210,7 @@ The natural frequency depends only on the energy storage elements (L and C), not
 <label style="font-size:0.9em;">C (μF): <input type="range" id="nfC" min="0.01" max="100" value="1" step="0.01" oninput="updateNF()"> <strong id="nfCval">1.00</strong></label>
 </div>
 <div id="nfResult" style="padding:10px;background:#F8F6FF;border-radius:8px;margin-bottom:8px;font-size:0.95em;"></div>
-<div id="nfWrap" style="position:relative;height:260px;"></div>
+<canvas id="nfRawCanvas" width="690" height="250" style="display:block;width:100%;border-radius:6px;"></canvas>
 </div>
 <script>
 function updateNF(){
@@ -218,16 +218,51 @@ function updateNF(){
   document.getElementById('nfLval').textContent=Lm.toFixed(1);
   document.getElementById('nfCval').textContent=Cu.toFixed(2);
   var L=Lm*1e-3,C=Cu*1e-6,w0=1/Math.sqrt(L*C),f0=w0/(2*Math.PI),T=1/f0;
+  var tUnit='ms',tDiv=1000;if(T<0.001){tUnit='μs';tDiv=1e6;}
   document.getElementById('nfResult').innerHTML=
     '<b>Formula:</b> ω₀ = 1/√(LC) = 1/√('+(L*C).toExponential(3)+') = <span style="color:#5A3EED;font-size:1.15em"><b>'+w0.toFixed(1)+' rad/s</b></span><br>'+
-    '<b>f₀</b> = ω₀/(2π) = <span style="color:#D4A017;font-size:1.15em"><b>'+f0.toFixed(1)+' Hz</b></span> &nbsp;|&nbsp; <b>T</b> = '+(T>=0.001?(T*1000).toFixed(3)+' ms':T>=1e-6?(T*1e6).toFixed(2)+' μs':(T*1e9).toFixed(1)+' ns')+'<br>'+
-    '<b>L</b> = '+Lm+' mH = '+(L*1000).toFixed(3)+' × 10⁻³ H &nbsp;|&nbsp; <b>C</b> = '+Cu+' μF = '+(C*1e6).toFixed(4)+' × 10⁻⁶ F';
-  var N=200,tMax=3*T,labels=[],data=[];
-  for(var i=0;i<=N;i++){var t=i*tMax/N;labels.push((t*1000).toFixed(2));data.push(Math.cos(w0*t));}
-  var wrap=document.getElementById('nfWrap');
-  wrap.innerHTML='<canvas></canvas>';
-  var cv=wrap.querySelector('canvas');
-  new Chart(cv,{type:'line',data:{labels:labels,datasets:[{label:'cos(ω₀t)',data:data,borderColor:'#5A3EED',borderWidth:2,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{title:{display:true,text:'Undamped Oscillation at f₀ = '+f0.toFixed(1)+' Hz  (T = '+(T>=0.001?(T*1000).toFixed(2)+' ms':(T*1e6).toFixed(1)+' μs')+')',font:{size:13},color:'#333'},legend:{display:false}},scales:{x:{title:{display:true,text:'Time (ms)'},ticks:{maxTicksLimit:8,font:{size:10}}},y:{title:{display:true,text:'Amplitude'},min:-1.2,max:1.2}}}});
+    '<b>f₀</b> = ω₀/(2π) = <span style="color:#D4A017;font-size:1.15em"><b>'+f0.toFixed(1)+' Hz</b></span> &nbsp;|&nbsp; <b>T</b> = '+(T*tDiv).toFixed(3)+' '+tUnit+'<br>'+
+    '<b>L</b> = '+Lm+' mH &nbsp;|&nbsp; <b>C</b> = '+Cu+' μF';
+  // Draw with raw Canvas 2D
+  var cv=document.getElementById('nfRawCanvas'),ctx=cv.getContext('2d');
+  var W=cv.width,H=cv.height,ml=55,mr=15,mt=30,mb=35,pw=W-ml-mr,ph=H-mt-mb;
+  ctx.clearRect(0,0,W,H);
+  // Background
+  ctx.fillStyle='#FAFAFA';ctx.fillRect(ml,mt,pw,ph);
+  // Grid
+  ctx.strokeStyle='#E8E8E8';ctx.lineWidth=1;
+  for(var g=0;g<=4;g++){var gy=mt+g*ph/4;ctx.beginPath();ctx.moveTo(ml,gy);ctx.lineTo(ml+pw,gy);ctx.stroke();}
+  for(var g=0;g<=6;g++){var gx=ml+g*pw/6;ctx.beginPath();ctx.moveTo(gx,mt);ctx.lineTo(gx,mt+ph);ctx.stroke();}
+  // Axes
+  ctx.strokeStyle='#333';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(ml,mt);ctx.lineTo(ml,mt+ph);ctx.lineTo(ml+pw,mt+ph);ctx.stroke();
+  // Zero line
+  var zeroY=mt+ph/2;
+  ctx.strokeStyle='#ccc';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(ml,zeroY);ctx.lineTo(ml+pw,zeroY);ctx.stroke();
+  ctx.setLineDash([]);
+  // Plot waveform
+  var tMax=3*T;
+  ctx.strokeStyle='#5A3EED';ctx.lineWidth=2.5;ctx.beginPath();
+  for(var i=0;i<=300;i++){
+    var t=i*tMax/300,x=ml+i*pw/300,y=zeroY-Math.cos(w0*t)*(ph/2-5);
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+  // Labels
+  ctx.fillStyle='#333';ctx.font='12px Arial';ctx.textAlign='center';
+  ctx.fillText('Time ('+tUnit+')',ml+pw/2,H-3);
+  // X ticks
+  ctx.font='10px Arial';
+  for(var g=0;g<=6;g++){var tv=(g*tMax/6*tDiv).toFixed(1);ctx.fillText(tv,ml+g*pw/6,mt+ph+14);}
+  // Y ticks
+  ctx.textAlign='right';
+  ctx.fillText('1.0',ml-4,mt+8);ctx.fillText('0',ml-4,zeroY+4);ctx.fillText('-1.0',ml-4,mt+ph+2);
+  // Y label
+  ctx.save();ctx.translate(12,mt+ph/2);ctx.rotate(-Math.PI/2);ctx.textAlign='center';ctx.font='12px Arial';ctx.fillText('Amplitude',0,0);ctx.restore();
+  // Title
+  ctx.fillStyle='#333';ctx.font='bold 13px Arial';ctx.textAlign='center';
+  ctx.fillText('Undamped Oscillation at f₀ = '+f0.toFixed(1)+' Hz  (T = '+(T*tDiv).toFixed(2)+' '+tUnit+')',W/2,18);
 }
 updateNF();
 </script>
