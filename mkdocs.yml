@@ -44,3 +44,7 @@ nav:
     - Glossary: chapters/ch3-glossary.md
     - References: chapters/ch3-references.md
   - Chapter 4: chapters/ch4.md
+  - Chapter 7 - Second-Order RLC Circuits:
+    - Content: chapters/ch7.md
+    - RLC Circuit Simulator: sims/rlc-circuit/index.md
+    - Natural Frequency Calculator: sims/natural-frequency-calculator/index.md
