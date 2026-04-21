@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Equivalent Resistance Calculator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    background: #EEF4FF;
+    color: #1a1a2e;
+    display: flex;
+    justify-content: center;
+    padding: 24px 12px;
+    min-height: 100vh;
+  }
+  .container {
+    max-width: 720px;
+    width: 100%;
+  }
+  h1 {
+    text-align: center;
+    color: #5A3EED;
+    font-size: 1.6rem;
+    margin-bottom: 20px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(90,62,237,0.08);
+  }
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    flex: 1;
+    min-width: 140px;
+    padding: 10px 12px;
+    border: 2px solid #5A3EED;
+    border-radius: 12px;
+    background: #fff;
+    color: #5A3EED;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tab-btn:hover { background: #f0ebff; }
+  .tab-btn.active {
+    background: #5A3EED;
+    color: #fff;
+  }
+  /* Sliders */
+  .slider-group { margin-bottom: 14px; }
+  .slider-group label {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 0.95rem;
+  }
+  .slider-group label span { color: #5A3EED; }
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: #ddd;
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #5A3EED;
+    cursor: pointer;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #5A3EED;
+    cursor: pointer;
+    border: none;
+  }
+  /* Voltage */
+  .voltage-group {
+    margin-bottom: 14px;
+  }
+  .voltage-group label {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 0.95rem;
+  }
+  .voltage-group label span { color: #5A3EED; }
+  /* Canvas */
+  canvas {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 12px;
+    background: #fafcff;
+  }
+  /* Results */
+  .results {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .result-box {
+    background: #EEF4FF;
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+  }
+  .result-box .label {
+    font-size: 0.82rem;
+    color: #666;
+    margin-bottom: 4px;
+  }
+  .result-box .value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #5A3EED;
+  }
+  .result-box .unit {
+    font-size: 0.8rem;
+    color: #888;
+  }
+  /* Steps */
+  .steps {
+    margin-top: 14px;
+    background: #f7f5ff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 0.92rem;
+    line-height: 1.7;
+  }
+  .steps .step-title {
+    font-weight: 700;
+    color: #5A3EED;
+    margin-bottom: 6px;
+  }
+  .steps code {
+    background: #e8e0ff;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.88rem;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Equivalent Resistance Calculator</h1>
+
+  <!-- Mode Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" data-mode="series">Series</button>
+    <button class="tab-btn" data-mode="parallel">Parallel</button>
+    <button class="tab-btn" data-mode="series-parallel">Series-Parallel</button>
+  </div>
+
+  <!-- Controls -->
+  <div class="card">
+    <div class="slider-group">
+      <label>R1: <span id="r1-val">1000 &Omega;</span></label>
+      <input type="range" id="r1" min="100" max="10000" value="1000" step="100">
+    </div>
+    <div class="slider-group">
+      <label>R2: <span id="r2-val">2000 &Omega;</span></label>
+      <input type="range" id="r2" min="100" max="10000" value="2000" step="100">
+    </div>
+    <div class="slider-group">
+      <label>R3: <span id="r3-val">3000 &Omega;</span></label>
+      <input type="range" id="r3" min="100" max="10000" value="3000" step="100">
+    </div>
+    <div class="voltage-group">
+      <label>Source Voltage: <span id="vs-val">12 V</span></label>
+      <input type="range" id="vs" min="1" max="48" value="12" step="1">
+    </div>
+  </div>
+
+  <!-- Circuit Diagram -->
+  <div class="card">
+    <canvas id="circuit" width="680" height="340"></canvas>
+  </div>
+
+  <!-- Results -->
+  <div class="card">
+    <div class="results">
+      <div class="result-box">
+        <div class="label">Equivalent Resistance</div>
+        <div class="value" id="req-val">0</div>
+        <div class="unit">&Omega;</div>
+      </div>
+      <div class="result-box">
+        <div class="label">Total Current</div>
+        <div class="value" id="itot-val">0</div>
+        <div class="unit">mA</div>
+      </div>
+    </div>
+    <div class="steps" id="steps"></div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const canvas = document.getElementById('circuit');
+  const ctx = canvas.getContext('2d');
+  const sliders = { r1: document.getElementById('r1'), r2: document.getElementById('r2'), r3: document.getElementById('r3'), vs: document.getElementById('vs') };
+  const labels = { r1: document.getElementById('r1-val'), r2: document.getElementById('r2-val'), r3: document.getElementById('r3-val'), vs: document.getElementById('vs-val') };
+  const reqEl = document.getElementById('req-val');
+  const itotEl = document.getElementById('itot-val');
+  const stepsEl = document.getElementById('steps');
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  let mode = 'series';
+
+  function fmt(v) { return v >= 1000 ? (v/1000).toFixed(v%1000===0?0:1) + ' k' : v.toString() + ' '; }
+  function fmtR(v) { return v >= 1000 ? (v/1000).toFixed(2) + ' k&Omega;' : v.toFixed(1) + ' &Omega;'; }
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      mode = btn.dataset.mode;
+      update();
+    });
+  });
+
+  Object.values(sliders).forEach(s => s.addEventListener('input', update));
+
+  function update() {
+    const r1 = +sliders.r1.value, r2 = +sliders.r2.value, r3 = +sliders.r3.value, vs = +sliders.vs.value;
+    labels.r1.innerHTML = fmt(r1) + '&Omega;';
+    labels.r2.innerHTML = fmt(r2) + '&Omega;';
+    labels.r3.innerHTML = fmt(r3) + '&Omega;';
+    labels.vs.innerHTML = vs + ' V';
+
+    let req, steps;
+    if (mode === 'series') {
+      req = r1 + r2 + r3;
+      steps = `<div class="step-title">Series Combination</div>
+        <code>R<sub>eq</sub> = R1 + R2 + R3</code><br>
+        <code>R<sub>eq</sub> = ${r1} + ${r2} + ${r3}</code><br>
+        <code>R<sub>eq</sub> = ${req} &Omega;</code>`;
+    } else if (mode === 'parallel') {
+      req = 1 / (1/r1 + 1/r2 + 1/r3);
+      steps = `<div class="step-title">Parallel Combination</div>
+        <code>1/R<sub>eq</sub> = 1/R1 + 1/R2 + 1/R3</code><br>
+        <code>1/R<sub>eq</sub> = 1/${r1} + 1/${r2} + 1/${r3}</code><br>
+        <code>1/R<sub>eq</sub> = ${(1/r1 + 1/r2 + 1/r3).toFixed(6)}</code><br>
+        <code>R<sub>eq</sub> = ${req.toFixed(2)} &Omega;</code>`;
+    } else {
+      const rp = 1 / (1/r2 + 1/r3);
+      req = r1 + rp;
+      steps = `<div class="step-title">Series-Parallel: R1 + (R2 || R3)</div>
+        <b>Step 1:</b> Combine R2 and R3 in parallel<br>
+        <code>R<sub>p</sub> = 1 / (1/R2 + 1/R3)</code><br>
+        <code>R<sub>p</sub> = 1 / (1/${r2} + 1/${r3})</code><br>
+        <code>R<sub>p</sub> = ${rp.toFixed(2)} &Omega;</code><br><br>
+        <b>Step 2:</b> Add R1 in series with R<sub>p</sub><br>
+        <code>R<sub>eq</sub> = R1 + R<sub>p</sub></code><br>
+        <code>R<sub>eq</sub> = ${r1} + ${rp.toFixed(2)}</code><br>
+        <code>R<sub>eq</sub> = ${req.toFixed(2)} &Omega;</code>`;
+    }
+
+    const current_mA = (vs / req) * 1000;
+    reqEl.innerHTML = req >= 1000 ? (req/1000).toFixed(2) + ' k' : req.toFixed(2);
+    itotEl.innerHTML = current_mA.toFixed(3);
+
+    steps += `<br><br><b>Total Current:</b><br>
+      <code>I = V / R<sub>eq</sub> = ${vs} / ${req.toFixed(2)} = ${(current_mA).toFixed(3)} mA</code>`;
+    stepsEl.innerHTML = steps;
+
+    drawCircuit(r1, r2, r3, vs, req);
+  }
+
+  function drawCircuit(r1, r2, r3, vs, req) {
+    const dpr = window.devicePixelRatio || 1;
+    const W = 680, H = 340;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = '#333';
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 13px Segoe UI, Roboto, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    if (mode === 'series') drawSeries(r1, r2, r3, vs);
+    else if (mode === 'parallel') drawParallel(r1, r2, r3, vs);
+    else drawSeriesParallel(r1, r2, r3, vs);
+  }
+
+  function drawResistor(x, y, w, horizontal, label) {
+    ctx.save();
+    ctx.strokeStyle = '#5A3EED';
+    ctx.lineWidth = 2.5;
+    const zigN = 5, zigH = 10;
+    ctx.beginPath();
+    if (horizontal) {
+      const segW = w / (zigN * 2);
+      ctx.moveTo(x, y);
+      for (let i = 0; i < zigN; i++) {
+        ctx.lineTo(x + segW * (i*2+1), y - zigH);
+        ctx.lineTo(x + segW * (i*2+2), y + (i < zigN-1 ? zigH : 0));
+      }
+    } else {
+      const segH = w / (zigN * 2);
+      ctx.moveTo(x, y);
+      for (let i = 0; i < zigN; i++) {
+        ctx.lineTo(x - zigH, y + segH * (i*2+1));
+        ctx.lineTo(x + (i < zigN-1 ? zigH : 0), y + segH * (i*2+2));
+      }
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    if (label) {
+      ctx.save();
+      ctx.fillStyle = '#5A3EED';
+      ctx.font = 'bold 12px Segoe UI, Roboto, sans-serif';
+      if (horizontal) {
+        ctx.fillText(label, x + w/2, y - 20);
+      } else {
+        ctx.fillText(label, x - 24, y + w/2);
+      }
+      ctx.restore();
+    }
+  }
+
+  function drawBattery(x, y, h, label) {
+    ctx.save();
+    ctx.strokeStyle = '#e63946';
+    ctx.lineWidth = 2.5;
+    const mid = y + h/2;
+    // draw wires to battery
+    ctx.beginPath();
+    ctx.moveTo(x, y); ctx.lineTo(x, mid - 12);
+    ctx.moveTo(x, mid + 12); ctx.lineTo(x, y + h);
+    ctx.stroke();
+    // long line (positive)
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(x - 14, mid - 12); ctx.lineTo(x + 14, mid - 12);
+    ctx.stroke();
+    // short line (negative)
+    ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    ctx.moveTo(x - 8, mid + 12); ctx.lineTo(x + 8, mid + 12);
+    ctx.stroke();
+    // plus/minus
+    ctx.font = 'bold 14px Segoe UI, sans-serif';
+    ctx.fillStyle = '#e63946';
+    ctx.textAlign = 'left';
+    ctx.fillText('+', x + 17, mid - 12);
+    ctx.fillText('\u2013', x + 17, mid + 14);
+    if (label) {
+      ctx.textAlign = 'right';
+      ctx.fillText(label, x - 18, mid);
+    }
+    ctx.restore();
+  }
+
+  function wire(x1, y1, x2, y2) {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+  }
+
+  function dot(x, y) {
+    ctx.beginPath();
+    ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#333';
+    ctx.fill();
+  }
+
+  function rLabel(v) { return v >= 1000 ? (v/1000) + 'k\u03A9' : v + '\u03A9'; }
+
+  function drawSeries(r1, r2, r3, vs) {
+    const W = 680, H = 340;
+    const top = 60, bot = 280;
+    const left = 80, right = 600;
+    const rw = 80; // resistor width
+
+    // Battery on left side
+    drawBattery(left, top, bot - top, vs + 'V');
+
+    // Top wire from battery to first resistor
+    wire(left, top, 170, top);
+
+    // R1
+    drawResistor(170, top, rw, true, 'R1 = ' + rLabel(r1));
+    wire(170 + rw, top, 310, top);
+
+    // R2
+    drawResistor(310, top, rw, true, 'R2 = ' + rLabel(r2));
+    wire(310 + rw, top, 450, top);
+
+    // R3
+    drawResistor(450, top, rw, true, 'R3 = ' + rLabel(r3));
+    wire(450 + rw, top, right, top);
+
+    // Right side down
+    wire(right, top, right, bot);
+
+    // Bottom wire
+    wire(left, bot, right, bot);
+
+    // Current arrow
+    drawArrow(340, bot + 2, 240, bot + 2);
+    ctx.fillStyle = '#e63946';
+    ctx.font = 'bold 12px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('I', 290, bot + 18);
+  }
+
+  function drawParallel(r1, r2, r3, vs) {
+    const W = 680, H = 340;
+    const top = 40, bot = 300;
+    const left = 80, right = 600;
+    const nodeL = 200, nodeR = 480;
+    const rw = 70;
+    const midX = (nodeL + nodeR) / 2;
+    const startX = midX - rw / 2;
+
+    // Battery on left
+    drawBattery(left, top, bot - top, vs + 'V');
+
+    // Top wire
+    wire(left, top, nodeL, top);
+    wire(nodeL, top, nodeR, top);
+    wire(nodeR, top, right, top);
+
+    // Bottom wire
+    wire(left, bot, nodeL, bot);
+    wire(nodeL, bot, nodeR, bot);
+    wire(nodeR, bot, right, bot);
+
+    // Right side wire
+    wire(right, top, right, bot);
+
+    // Three branches
+    const yPositions = [90, 170, 250];
+    const labels = ['R1 = ' + rLabel(r1), 'R2 = ' + rLabel(r2), 'R3 = ' + rLabel(r3)];
+
+    for (let i = 0; i < 3; i++) {
+      const yy = yPositions[i];
+      wire(nodeL, top, nodeL, yy); // already connected via top
+      wire(nodeR, top, nodeR, yy);
+      wire(nodeL, yy, startX, yy);
+      drawResistor(startX, yy, rw, true, labels[i]);
+      wire(startX + rw, yy, nodeR, yy);
+    }
+    // vertical wires on nodes
+    wire(nodeL, top, nodeL, bot);
+    wire(nodeR, top, nodeR, bot);
+
+    // Dots at nodes
+    dot(nodeL, top); dot(nodeR, top);
+    dot(nodeL, bot); dot(nodeR, bot);
+
+    // Current arrow
+    drawArrow(180, bot + 2, 100, bot + 2);
+    ctx.fillStyle = '#e63946';
+    ctx.font = 'bold 12px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('I', 140, bot + 18);
+  }
+
+  function drawSeriesParallel(r1, r2, r3, vs) {
+    const W = 680, H = 340;
+    const top = 60, bot = 280;
+    const left = 80, right = 600;
+    const rw = 80;
+
+    // Battery on left
+    drawBattery(left, top, bot - top, vs + 'V');
+
+    // R1 on top wire in series
+    wire(left, top, 160, top);
+    drawResistor(160, top, rw, true, 'R1 = ' + rLabel(r1));
+    wire(160 + rw, top, 320, top);
+
+    // Node for parallel section
+    const nodeL = 320, nodeR = 520;
+    const yTop = top - 40, yBot = top + 40;
+
+    // Wires from node to split
+    wire(nodeL, top, nodeL, yTop);
+    wire(nodeL, top, nodeL, yBot);
+    wire(nodeR, yTop, nodeR, top);
+    wire(nodeR, yBot, nodeR, top);
+
+    // Horizontal to parallel R2 (top branch)
+    const r2startX = (nodeL + nodeR) / 2 - rw / 2;
+    wire(nodeL, yTop, r2startX, yTop);
+    drawResistor(r2startX, yTop, rw, true, 'R2 = ' + rLabel(r2));
+    wire(r2startX + rw, yTop, nodeR, yTop);
+
+    // Horizontal to parallel R3 (bottom branch)
+    wire(nodeL, yBot, r2startX, yBot);
+    drawResistor(r2startX, yBot, rw, true, 'R3 = ' + rLabel(r3));
+    wire(r2startX + rw, yBot, nodeR, yBot);
+
+    // Dots at parallel nodes
+    dot(nodeL, top);
+    dot(nodeR, top);
+
+    // Wire from nodeR to right
+    wire(nodeR, top, right, top);
+
+    // Right side down
+    wire(right, top, right, bot);
+
+    // Bottom wire
+    wire(left, bot, right, bot);
+
+    // Current arrow
+    drawArrow(400, bot + 2, 300, bot + 2);
+    ctx.fillStyle = '#e63946';
+    ctx.font = 'bold 12px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('I', 350, bot + 18);
+  }
+
+  function drawArrow(x1, y1, x2, y2) {
+    ctx.save();
+    ctx.strokeStyle = '#e63946';
+    ctx.fillStyle = '#e63946';
+    ctx.lineWidth = 2;
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    // arrowhead
+    const hl = 10;
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - hl * Math.cos(angle - 0.4), y2 - hl * Math.sin(angle - 0.4));
+    ctx.lineTo(x2 - hl * Math.cos(angle + 0.4), y2 - hl * Math.sin(angle + 0.4));
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  update();
+})();
+</script>
+</body>
+</html>

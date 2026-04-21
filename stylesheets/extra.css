@@ -1,0 +1,259 @@
+/* ===== PURPLE / GOLD THEME (matching ee2301 style) ===== */
+
+:root {
+  --md-primary-fg-color: #5A3EED;
+  --md-primary-fg-color--light: #7A5CFF;
+  --md-primary-fg-color--dark: #4527A0;
+  --md-primary-bg-color: #ffffff;
+  --md-primary-bg-color--light: #F6F1FF;
+  --md-accent-fg-color: #D4A017;
+  --md-accent-fg-color--transparent: rgba(212, 160, 23, 0.1);
+}
+
+/* --- Page headings --- */
+.md-typeset h1 {
+  color: #5A3EED;
+  font-weight: 700;
+  border-bottom: 3px solid #D4A017;
+  padding-bottom: 0.3rem;
+}
+
+.md-typeset h2 {
+  color: #5A3EED;
+  font-weight: 600;
+}
+
+.md-typeset h3 {
+  color: #7A5CFF;
+  font-weight: 600;
+}
+
+.md-typeset h4 {
+  color: #7A5CFF;
+}
+
+/* --- Top header bar --- */
+.md-header {
+  background-color: #5A3EED;
+}
+
+/* --- Sidebar nav links --- */
+.md-nav__link--active {
+  color: #5A3EED !important;
+  font-weight: 600;
+}
+
+.md-nav__link:hover {
+  color: #D4A017 !important;
+}
+
+/* --- Content links --- */
+.md-typeset a {
+  color: #5A3EED;
+}
+
+.md-typeset a:hover {
+  color: #D4A017;
+}
+
+/* ===== BODY TEXT STYLING ===== */
+.md-typeset {
+  color: #222222;
+  line-height: 1.6;
+}
+
+.md-typeset p {
+  max-width: 72ch;
+}
+
+.md-typeset strong {
+  color: #222222;
+}
+
+/* ===== TABLE STYLING ===== */
+.md-typeset table:not([class]) {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid #C9B9FF;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 1.2rem;
+  margin-bottom: 1.2rem;
+}
+
+.md-typeset table:not([class]) th {
+  background: #6A5BFF !important;
+  color: #ffffff !important;
+  font-weight: 700;
+  border-color: #C9B9FF;
+  padding: 0.6rem 1rem;
+  text-align: center;
+}
+
+.md-typeset table:not([class]) td {
+  border-color: #C9B9FF;
+  padding: 0.5rem 1rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.md-typeset table:not([class]) tbody tr:nth-child(odd) {
+  background: #ffffff;
+}
+
+.md-typeset table:not([class]) tbody tr:nth-child(even) {
+  background: #F4F0FF;
+}
+
+/* ===== CODE / STEP-BY-STEP BLOCKS ===== */
+.md-typeset pre {
+  background: #F7F7F8 !important;
+  border-left: 4px solid #5A3EED;
+  border-radius: 0 6px 6px 0;
+  padding: 1rem 1.2rem;
+  margin: 1rem 0;
+}
+
+.md-typeset code {
+  background: #F3F0FA;
+  color: #222;
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+}
+
+.md-typeset pre code {
+  background: transparent;
+  padding: 0;
+}
+
+/* ===== MATH / EQUATIONS ===== */
+.md-typeset .MathJax {
+  color: #222222 !important;
+}
+
+.md-typeset .MathJax_Display,
+.md-typeset mjx-container[display="true"] {
+  text-align: center !important;
+  margin: 1.2rem 0 !important;
+}
+
+/* ===== CHAPTER STYLED SECTIONS ===== */
+
+/* Summary box */
+.chapter-styled .summary-box {
+  background: #EEF4FF;
+  border: 2px solid #A8C8FF;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 1rem 0;
+  box-shadow: 0 2px 8px rgba(90, 61, 237, 0.07);
+}
+
+.chapter-styled .summary-box p {
+  color: #333;
+  line-height: 1.85;
+  font-size: 1.02rem;
+  margin: 0;
+}
+
+/* Concepts box */
+.chapter-styled .concepts-box {
+  background: #F8F6FF;
+  border: 2px solid #D4C8FF;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 1rem 0;
+}
+
+/* Prerequisites box */
+.chapter-styled .prereq-box {
+  background: #FFF8E1;
+  border: 2px solid #FFE082;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 1rem 0;
+}
+
+/* Chapter heading overrides */
+.chapter-styled h1 {
+  color: #5A3EED !important;
+  font-weight: 800;
+  border-bottom: 3px solid #D4A017;
+  padding-bottom: 0.4rem;
+  margin-top: 24px;
+  margin-bottom: 16px;
+}
+
+.chapter-styled h2 {
+  color: #D4A017 !important;
+  border-bottom: none;
+  border-left: 4px solid #D4A017;
+  padding-left: 0.7rem;
+  padding-bottom: 0;
+  margin-top: 2.2rem;
+  margin-bottom: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.chapter-styled h3 {
+  color: #5A3EED !important;
+  border-left: none;
+  padding-left: 0;
+  margin-top: 1.6rem;
+  font-weight: 600;
+}
+
+.chapter-styled h4 {
+  color: #5A3EED !important;
+  font-weight: 600;
+}
+
+/* Styled horizontal rules */
+.chapter-styled hr {
+  border: none;
+  height: 2px;
+  background: linear-gradient(90deg, #D4A017, #5A3EED, #D4A017);
+  margin: 2rem 0;
+  border-radius: 1px;
+}
+
+/* MicroSim iframe containers */
+.chapter-styled iframe,
+.md-typeset iframe {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin: 0.4rem 0 1.2rem 0;
+  background: #ffffff;
+  border: 1px solid #E0E0E0;
+}
+
+/* Admonition overrides */
+.chapter-styled .md-typeset .admonition,
+.chapter-styled .md-typeset details {
+  border-radius: 8px;
+}
+
+/* Self-check questions styling */
+.chapter-styled details.question {
+  background: linear-gradient(135deg, #e8eaf6 0%, #f3e5f5 100%);
+  border-left: 4px solid #5c6bc0;
+  border-radius: 8px;
+  padding: 0.8rem 1.2rem;
+  margin: 1rem 0;
+}
+
+.chapter-styled details.question summary {
+  cursor: pointer;
+  color: #1a237e;
+  font-weight: 600;
+}
+
+/* Ordered list styling */
+.chapter-styled ol {
+  padding-left: 1.4rem;
+}
+
+.chapter-styled ol li {
+  margin-bottom: 0.5rem;
+}

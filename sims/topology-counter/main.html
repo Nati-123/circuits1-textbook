@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Circuit Topology Explorer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Roboto, sans-serif; background: #f7f9fc; color: #1a1a2e; display: flex; justify-content: center; padding: 20px 16px; }
+  .container { max-width: 720px; width: 100%; }
+  h2 { text-align: center; font-size: 1.25rem; font-weight: 700; color: #5A3EED; margin-bottom: 4px; }
+  .subtitle { text-align: center; font-size: 0.92rem; color: #555; margin-bottom: 16px; line-height: 1.5; }
+
+  .selector { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
+  .selector button { padding: 8px 18px; border: 2px solid #5A3EED; border-radius: 20px; background: #fff; color: #5A3EED; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .selector button:hover { background: #F8F6FF; }
+  .selector button.active { background: #5A3EED; color: #fff; }
+
+  .canvas-card { background: #fff; border: 2px solid #A8C8FF; border-radius: 12px; padding: 14px; margin-bottom: 12px; text-align: center; box-shadow: 0 2px 8px rgba(90,62,237,0.07); }
+  .circuit-label { font-size: 1rem; font-weight: 700; color: #333; margin-bottom: 2px; }
+  .circuit-desc { font-size: 0.82rem; color: #777; margin-bottom: 10px; }
+  canvas { display: block; margin: 0 auto; border-radius: 8px; background: #FAFCFF; }
+
+  .toggle-row { display: flex; gap: 8px; justify-content: center; margin: 12px 0; flex-wrap: wrap; }
+  .toggle-btn { padding: 7px 16px; border: 2px solid #ccc; border-radius: 8px; background: #fff; font-size: 0.84rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .toggle-btn.on-nodes { border-color: #1565C0; background: #E3F2FD; color: #1565C0; }
+  .toggle-btn.on-branches { border-color: #5A3EED; background: #F3F0FF; color: #5A3EED; }
+  .toggle-btn.on-loops { border-color: #E65100; background: #FFF3E0; color: #E65100; }
+
+  .count-btn { display: block; margin: 0 auto; padding: 9px 28px; border: none; border-radius: 20px; background: #5A3EED; color: #fff; font-size: 0.92rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .count-btn:hover { background: #4830c9; }
+
+  .results { background: #EEF4FF; border: 2px solid #A8C8FF; border-radius: 12px; padding: 16px 20px; display: none; }
+  .results.show { display: block; }
+  .results h3 { font-size: 0.95rem; color: #5A3EED; margin-bottom: 10px; text-align: center; }
+
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+  .metric { background: #fff; border-radius: 10px; padding: 10px 8px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  .metric .label { font-size: 0.72rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+  .metric .val { font-size: 1.4rem; font-weight: 700; }
+  .metric .val.c-node { color: #1565C0; }
+  .metric .val.c-branch { color: #5A3EED; }
+  .metric .val.c-loop { color: #E65100; }
+  .metric .val.c-mesh { color: #2E7D32; }
+
+  .formula-box { background: #fff; border-radius: 10px; padding: 12px 14px; font-size: 0.88rem; line-height: 1.6; }
+  .formula-box .eq { font-weight: 700; color: #333; }
+  .formula-box .pass { color: #2E7D32; font-weight: 700; }
+
+  .legend { margin-top: 10px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; font-size: 0.8rem; color: #666; }
+  .legend span { display: flex; align-items: center; gap: 4px; }
+  .legend .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .legend .line { width: 18px; height: 3px; border-radius: 2px; }
+
+  .convention { margin-top: 12px; background: #FFF7DD; border: 2px solid #F0D87A; border-radius: 10px; padding: 12px 16px; font-size: 0.84rem; color: #555; line-height: 1.6; }
+  .convention strong { color: #B8860B; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>Circuit Topology Explorer</h2>
+  <p class="subtitle">Explore how nodes, branches, loops, and meshes define circuit structure.</p>
+
+  <div class="selector">
+    <button class="active" onclick="pick(0)">Simple Loop</button>
+    <button onclick="pick(1)">Parallel</button>
+    <button onclick="pick(2)">Bridge (Wheatstone)</button>
+  </div>
+
+  <div class="canvas-card">
+    <div class="circuit-label" id="cTitle">Simple Loop Circuit</div>
+    <div class="circuit-desc" id="cDesc">A single closed path — 4 nodes, 4 branches, 1 mesh.</div>
+    <canvas id="cv" width="680" height="300"></canvas>
+  </div>
+
+  <div class="toggle-row">
+    <button class="toggle-btn" id="tNodes" onclick="toggle('nodes')">Show Nodes</button>
+    <button class="toggle-btn" id="tBranches" onclick="toggle('branches')">Show Branches</button>
+    <button class="toggle-btn" id="tLoops" onclick="toggle('loops')">Show Loops</button>
+    <button class="count-btn" onclick="countAll()">Count All Elements</button>
+  </div>
+
+  <div class="results" id="results">
+    <h3>Topology Results</h3>
+    <div class="metrics">
+      <div class="metric"><div class="label">Nodes (n)</div><div class="val c-node" id="rN">—</div></div>
+      <div class="metric"><div class="label">Branches (b)</div><div class="val c-branch" id="rB">—</div></div>
+      <div class="metric"><div class="label">Loops (l)</div><div class="val c-loop" id="rL">—</div></div>
+      <div class="metric"><div class="label">Meshes (m)</div><div class="val c-mesh" id="rM">—</div></div>
+    </div>
+    <div class="formula-box" id="fBox"></div>
+    <div class="legend">
+      <span><span class="dot" style="background:#1565C0;"></span> Nodes</span>
+      <span><span class="line" style="background:#5A3EED;"></span> Branches</span>
+      <span><span class="dot" style="background:#E65100; border-radius:3px; width:14px; height:14px;"></span> Loop/Mesh paths</span>
+    </div>
+  </div>
+
+  <div class="convention">
+    <strong>Topology Formula:</strong> b = n − 1 + m, where <strong>b</strong> = branches, <strong>n</strong> = nodes, <strong>m</strong> = independent meshes. A <strong>mesh</strong> is a loop containing no other loops inside it.
+  </div>
+</div>
+
+<script>
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+
+const circuits = [
+  { name:'Simple Loop Circuit', desc:'A single closed path — 4 nodes, 4 branches, 1 mesh.',
+    nodes:[ {x:140,y:60,l:'A'},{x:540,y:60,l:'B'},{x:540,y:240,l:'C'},{x:140,y:240,l:'D'} ],
+    branches:[ [0,1,'R₁'],[1,2,'R₂'],[2,3,'R₃'],[3,0,'Vs',true] ],
+    loops:[ [0,1,2,3] ],
+    n:4, b:4, l:1, m:1 },
+  { name:'Parallel Circuit', desc:'Two nodes connected by three parallel branches — 2 nodes, 3 branches, 2 meshes.',
+    nodes:[ {x:140,y:150,l:'A'},{x:540,y:150,l:'B'} ],
+    branches:[ [0,1,'R₁',false,{cx:340,cy:40}],[0,1,'Vs',true,{cx:340,cy:150}],[0,1,'R₂',false,{cx:340,cy:260}] ],
+    loops:[ [0,0,1],[1,1,2] ],
+    n:2, b:3, l:2, m:2 },
+  { name:'Bridge (Wheatstone) Circuit', desc:'Classic bridge — 4 nodes, 6 branches, 3 meshes.',
+    nodes:[ {x:340,y:40,l:'A'},{x:140,y:160,l:'B'},{x:540,y:160,l:'C'},{x:340,y:280,l:'D'} ],
+    branches:[ [0,1,'R₁'],[0,2,'R₂'],[1,2,'R₅'],[1,3,'R₃'],[2,3,'R₄'],[3,0,'Vs',true,{cx:580,cy:160}] ],
+    loops:[ [0,2,0],[2,4,3],[0,1,2,3,4] ],
+    n:4, b:6, l:3, m:3 }
+];
+
+let cur = 0;
+let show = { nodes:false, branches:false, loops:false };
+let animFrame = 0;
+
+function pick(i) {
+  cur = i;
+  show = { nodes:false, branches:false, loops:false };
+  document.getElementById('results').classList.remove('show');
+  updateToggles();
+  document.querySelectorAll('.selector button').forEach((b,j) => b.classList.toggle('active', j===i));
+  const c = circuits[i];
+  document.getElementById('cTitle').textContent = c.name;
+  document.getElementById('cDesc').textContent = c.desc;
+  draw();
+}
+
+function toggle(what) {
+  show[what] = !show[what];
+  updateToggles();
+  draw();
+}
+
+function updateToggles() {
+  document.getElementById('tNodes').className = 'toggle-btn' + (show.nodes ? ' on-nodes' : '');
+  document.getElementById('tBranches').className = 'toggle-btn' + (show.branches ? ' on-branches' : '');
+  document.getElementById('tLoops').className = 'toggle-btn' + (show.loops ? ' on-loops' : '');
+}
+
+function countAll() {
+  show = { nodes:true, branches:true, loops:true };
+  updateToggles();
+  draw();
+  const c = circuits[cur];
+  document.getElementById('rN').textContent = c.n;
+  document.getElementById('rB').textContent = c.b;
+  document.getElementById('rL').textContent = c.l;
+  document.getElementById('rM').textContent = c.m;
+  const exp = (c.n - 1) + c.m;
+  document.getElementById('fBox').innerHTML =
+    '<div class="eq">b = n − 1 + m</div>' +
+    '<div style="margin-top:4px;">' + c.b + ' = ' + c.n + ' − 1 + ' + c.m +
+    ' → ' + c.b + ' = ' + exp + ' <span class="pass">✓ Verified</span></div>';
+  document.getElementById('results').classList.add('show');
+}
+
+// ── Drawing ──
+function draw() {
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = 680 * dpr; cv.height = 300 * dpr;
+  cv.style.width = '680px'; cv.style.height = '300px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, 680, 300);
+  const c = circuits[cur];
+
+  // Draw loop highlights first (behind everything)
+  if (show.loops) drawLoops(c);
+  // Draw branches
+  c.branches.forEach((br, i) => drawBranch(c, br, i));
+  // Draw nodes on top
+  c.nodes.forEach((nd, i) => drawNode(nd, i));
+}
+
+function drawLoops(c) {
+  const colors = ['rgba(230,81,0,0.12)', 'rgba(46,125,50,0.12)', 'rgba(21,101,192,0.12)'];
+  const strokes = ['#E65100', '#2E7D32', '#1565C0'];
+  c.loops.forEach((loop, li) => {
+    if (cur === 1) {
+      // Parallel: loops are pairs of curved branches
+      drawParallelLoop(c, loop, colors[li], strokes[li], li);
+    } else {
+      // Simple loop / bridge: polygon through nodes
+      drawPolygonLoop(c, loop, colors[li], strokes[li], li);
+    }
+  });
+}
+
+function drawPolygonLoop(c, nodeIdxs, fillColor, strokeColor, li) {
+  ctx.save();
+  ctx.beginPath();
+  const pts = nodeIdxs.map(i => c.nodes[i]);
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.closePath();
+  ctx.fillStyle = fillColor;
+  ctx.fill();
+  ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = 2.5;
+  ctx.setLineDash([8, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  // Label
+  let cx = 0, cy = 0;
+  pts.forEach(p => { cx += p.x; cy += p.y; });
+  cx /= pts.length; cy /= pts.length;
+  ctx.font = '700 12px Segoe UI'; ctx.fillStyle = strokeColor; ctx.textAlign = 'center';
+  ctx.fillText('Mesh ' + (li + 1), cx, cy + 4);
+  ctx.restore();
+}
+
+function drawParallelLoop(c, brIdxs, fillColor, strokeColor, li) {
+  ctx.save();
+  const n0 = c.nodes[0], n1 = c.nodes[1];
+  const b1 = c.branches[brIdxs[0]], b2 = c.branches[brIdxs[1]];
+  const cp1 = b1[4] || {cx:(n0.x+n1.x)/2, cy:80};
+  const cp2 = b2[4] || {cx:(n0.x+n1.x)/2, cy:220};
+  ctx.beginPath();
+  ctx.moveTo(n0.x, n0.y);
+  ctx.quadraticCurveTo(cp1.cx, cp1.cy, n1.x, n1.y);
+  ctx.quadraticCurveTo(cp2.cx, cp2.cy, n0.x, n0.y);
+  ctx.closePath();
+  ctx.fillStyle = fillColor; ctx.fill();
+  ctx.strokeStyle = strokeColor; ctx.lineWidth = 2.5; ctx.setLineDash([8, 4]); ctx.stroke(); ctx.setLineDash([]);
+  const my = (cp1.cy + cp2.cy) / 2;
+  ctx.font = '700 12px Segoe UI'; ctx.fillStyle = strokeColor; ctx.textAlign = 'center';
+  ctx.fillText('Mesh ' + (li + 1), 340, my + 4);
+  ctx.restore();
+}
+
+function drawBranch(c, br, idx) {
+  const n0 = c.nodes[br[0]], n1 = c.nodes[br[1]];
+  const label = br[2], isSource = br[3];
+  const cp = br[4];
+  const hl = show.branches;
+
+  ctx.save();
+  ctx.strokeStyle = hl ? '#5A3EED' : '#B0BEC5';
+  ctx.lineWidth = hl ? 3 : 2;
+  ctx.beginPath();
+  if (cp) {
+    ctx.moveTo(n0.x, n0.y);
+    ctx.quadraticCurveTo(cp.cx, cp.cy, n1.x, n1.y);
+  } else {
+    ctx.moveTo(n0.x, n0.y); ctx.lineTo(n1.x, n1.y);
+  }
+  ctx.stroke();
+
+  // Component
+  let mx, my;
+  if (cp) {
+    mx = 0.25*n0.x + 0.5*cp.cx + 0.25*n1.x;
+    my = 0.25*n0.y + 0.5*cp.cy + 0.25*n1.y;
+  } else {
+    mx = (n0.x + n1.x) / 2; my = (n0.y + n1.y) / 2;
+  }
+
+  if (isSource) {
+    ctx.beginPath(); ctx.arc(mx, my, 13, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.strokeStyle = '#E65100'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.font = '700 11px Segoe UI'; ctx.fillStyle = '#E65100'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('+', mx - 5, my); ctx.fillText('−', mx + 5, my);
+    ctx.font = '600 11px Segoe UI'; ctx.fillStyle = '#E65100'; ctx.textBaseline = 'bottom';
+    ctx.fillText(label, mx, my - 16);
+  } else {
+    // Zigzag resistor
+    drawZigzag(mx, my, n0, n1, cp);
+    ctx.font = '600 11px Segoe UI'; ctx.fillStyle = hl ? '#5A3EED' : '#555'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    const offsetY = cp ? (cp.cy < 150 ? -12 : 20) : -12;
+    ctx.fillText(label, mx, my + offsetY);
+  }
+
+  // Branch index label if highlighting
+  if (hl) {
+    ctx.font = '700 10px Segoe UI'; ctx.fillStyle = '#5A3EED'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    const ly = cp ? (cp.cy < 150 ? my - 24 : my + 22) : my + 10;
+    ctx.fillText('b' + (idx + 1), mx + 20, ly);
+  }
+  ctx.restore();
+}
+
+function drawZigzag(mx, my, n0, n1, cp) {
+  // Draw a small zigzag symbol at the midpoint
+  let angle;
+  if (cp) {
+    // Tangent at midpoint of quadratic
+    const tx = n1.x - n0.x, ty = n1.y - n0.y;
+    angle = Math.atan2(ty, tx);
+  } else {
+    angle = Math.atan2(n1.y - n0.y, n1.x - n0.x);
+  }
+  ctx.save();
+  ctx.translate(mx, my);
+  ctx.rotate(angle);
+  const w = 20, amp = 6, segs = 4;
+  ctx.beginPath();
+  ctx.moveTo(-w, 0);
+  for (let i = 0; i <= segs; i++) {
+    const x = -w + (2 * w * i / segs);
+    const y = (i === 0 || i === segs) ? 0 : ((i % 2 === 1) ? -amp : amp);
+    ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = '#5A3EED'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.restore();
+}
+
+function drawNode(nd, idx) {
+  const hl = show.nodes;
+  const r = hl ? 9 : 5;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(nd.x, nd.y, r, 0, Math.PI * 2);
+  ctx.fillStyle = hl ? '#1565C0' : '#78909C';
+  ctx.fill();
+  if (hl) {
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+    // Glow
+    ctx.beginPath(); ctx.arc(nd.x, nd.y, r + 4, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(21,101,192,0.25)'; ctx.lineWidth = 3; ctx.stroke();
+    // Label
+    ctx.font = '700 13px Segoe UI'; ctx.fillStyle = '#1565C0'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText(nd.l, nd.x, nd.y - 14);
+  }
+  ctx.restore();
+}
+
+// Initial
+draw();
+</script>
+</body>
+</html>

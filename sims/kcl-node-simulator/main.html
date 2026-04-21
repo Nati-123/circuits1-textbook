@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KCL Node Current Balance Simulator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    background: #f7f9fc;
+    color: #1a1a2e;
+    display: flex;
+    justify-content: center;
+    padding: 20px 16px;
+  }
+  .container { max-width: 720px; width: 100%; }
+  h2 { text-align: center; font-size: 1.25rem; font-weight: 700; color: #5A3EED; margin-bottom: 4px; }
+  .subtitle { text-align: center; font-size: 0.92rem; color: #555; margin-bottom: 16px; line-height: 1.5; }
+  canvas { display: block; margin: 0 auto 16px; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px rgba(90,62,237,0.08); }
+  .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .slider-group { background: #fff; border-radius: 10px; padding: 12px 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  .slider-group label { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 0.88rem; margin-bottom: 6px; }
+  .slider-group label .wire-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+  .slider-group label .value { font-weight: 700; min-width: 55px; text-align: right; font-size: 0.88rem; }
+  .slider-group .direction { font-size: 0.78rem; color: #777; margin-top: 3px; }
+  input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 5px; border-radius: 3px; background: #ddd; outline: none; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #5A3EED; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+  input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #5A3EED; cursor: pointer; border: 2px solid #fff; }
+
+  .equation-box { background: #fff; border: 2px solid #A8C8FF; border-radius: 10px; padding: 14px 18px; margin-bottom: 12px; text-align: center; }
+  .equation-box .eq-label { font-size: 0.82rem; color: #555; margin-bottom: 6px; font-weight: 600; }
+  .equation-box .eq-live { font-size: 1.1rem; font-weight: 700; color: #333; line-height: 1.6; font-family: 'Segoe UI', monospace; }
+  .equation-box .eq-live .pos { color: #2E7D32; }
+  .equation-box .eq-live .neg { color: #D32F2F; }
+  .equation-box .eq-live .zero { color: #5A3EED; }
+
+  .result-box { background: #EEF4FF; border: 2px solid #A8C8FF; border-radius: 12px; padding: 16px 20px; text-align: center; }
+  .result-box .sum-label { font-size: 0.85rem; color: #555; margin-bottom: 4px; }
+  .result-box .sum-value { font-size: 1.6rem; font-weight: 700; margin-bottom: 6px; }
+  .result-box .status { font-size: 0.95rem; font-weight: 600; padding: 5px 14px; border-radius: 8px; display: inline-block; }
+  .status.verified { background: #E7F7E7; color: #2E7D32; border: 1px solid #81C784; }
+  .status.warning { background: #FDECEA; color: #C62828; border: 1px solid #EF9A9A; }
+
+  .convention { margin-top: 12px; background: #FFF7DD; border: 2px solid #F0D87A; border-radius: 10px; padding: 12px 16px; font-size: 0.85rem; color: #555; line-height: 1.6; }
+  .convention strong { color: #B8860B; }
+  .convention .into { color: #2E7D32; font-weight: 600; }
+  .convention .outof { color: #D32F2F; font-weight: 600; }
+
+  @media (max-width: 500px) { .controls { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>KCL Node Current Balance Simulator</h2>
+  <p class="subtitle">Kirchhoff's Current Law: The algebraic sum of all currents at a node equals zero.</p>
+
+  <canvas id="canvas" width="400" height="380"></canvas>
+
+  <div class="controls">
+    <div class="slider-group">
+      <label><span><span class="wire-dot" style="background:#e74c3c"></span>I<sub>1</sub> (Top)</span><span class="value" id="val1">+5.0 A</span></label>
+      <input type="range" id="s1" min="-10" max="10" step="0.1" value="5">
+      <div class="direction" id="dir1">→ Into node</div>
+    </div>
+    <div class="slider-group">
+      <label><span><span class="wire-dot" style="background:#2980b9"></span>I<sub>2</sub> (Right)</span><span class="value" id="val2">+3.0 A</span></label>
+      <input type="range" id="s2" min="-10" max="10" step="0.1" value="3">
+      <div class="direction" id="dir2">→ Into node</div>
+    </div>
+    <div class="slider-group">
+      <label><span><span class="wire-dot" style="background:#27ae60"></span>I<sub>3</sub> (Bottom)</span><span class="value" id="val3">-8.0 A</span></label>
+      <input type="range" id="s3" min="-10" max="10" step="0.1" value="-8">
+      <div class="direction" id="dir3">→ Out of node</div>
+    </div>
+    <div class="slider-group">
+      <label><span><span class="wire-dot" style="background:#f39c12"></span>I<sub>4</sub> (Left)</span><span class="value" id="val4">0.0 A</span></label>
+      <input type="range" id="s4" min="-10" max="10" step="0.1" value="0">
+      <div class="direction" id="dir4">→ Zero current</div>
+    </div>
+  </div>
+
+  <div class="equation-box">
+    <div class="eq-label">Live KCL Equation (positive = into node, negative = out of node)</div>
+    <div class="eq-live" id="eqLive">(+5.0) + (+3.0) + (−8.0) + (0.0) = 0.0 A</div>
+  </div>
+
+  <div class="result-box">
+    <div class="sum-label">ΣI at node</div>
+    <div class="sum-value" id="sumDisplay">0.0 A</div>
+    <div class="status verified" id="statusDisplay">✓ KCL Verified: ΣI = 0</div>
+  </div>
+
+  <div class="convention">
+    <strong>Sign Convention:</strong>
+    <span class="into">Positive (+) = current flowing INTO the node.</span>
+    <span class="outof">Negative (−) = current flowing OUT OF the node.</span>
+    KCL states that charge is conserved — every coulomb entering a node must also leave. Adjust the sliders so the sum equals zero.
+  </div>
+</div>
+
+<script>
+(function () {
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const sliders = [document.getElementById('s1'), document.getElementById('s2'), document.getElementById('s3'), document.getElementById('s4')];
+  const valEls = [document.getElementById('val1'), document.getElementById('val2'), document.getElementById('val3'), document.getElementById('val4')];
+  const dirEls = [document.getElementById('dir1'), document.getElementById('dir2'), document.getElementById('dir3'), document.getElementById('dir4')];
+  const sumEl = document.getElementById('sumDisplay');
+  const statusEl = document.getElementById('statusDisplay');
+  const eqEl = document.getElementById('eqLive');
+  const COLORS = ['#e74c3c', '#2980b9', '#27ae60', '#f39c12'];
+  const LABELS = ['I\u2081', 'I\u2082', 'I\u2083', 'I\u2084'];
+  const DIRS = [{x:0,y:-1},{x:1,y:0},{x:0,y:1},{x:-1,y:0}];
+  const CX = 200, CY = 190, WIRE_LEN = 130, NODE_R = 9;
+
+  function draw() {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = 400 * dpr; canvas.height = 380 * dpr;
+    canvas.style.width = '400px'; canvas.style.height = '380px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, 400, 380);
+    const vals = sliders.map(s => parseFloat(s.value));
+    const sum = vals.reduce((a, b) => a + b, 0);
+    const balanced = Math.abs(sum) < 0.05;
+
+    for (let i = 0; i < 4; i++) {
+      const v = vals[i], dir = DIRS[i];
+      const ex = CX + dir.x * WIRE_LEN, ey = CY + dir.y * WIRE_LEN;
+
+      ctx.beginPath(); ctx.moveTo(CX, CY); ctx.lineTo(ex, ey);
+      ctx.strokeStyle = COLORS[i]; ctx.lineWidth = 2.5; ctx.stroke();
+
+      if (Math.abs(v) > 0.05) {
+        const inward = v > 0;
+        const arrowPos = 0.55;
+        const mx = CX + dir.x * WIRE_LEN * arrowPos, my = CY + dir.y * WIRE_LEN * arrowPos;
+        const ax = inward ? -dir.x : dir.x, ay = inward ? -dir.y : dir.y;
+        const px = -ay, py = ax;
+        const sz = 8 + (Math.abs(v) / 10) * 6;
+        const tipX = mx + ax * sz, tipY = my + ay * sz;
+        ctx.beginPath();
+        ctx.moveTo(tipX, tipY);
+        ctx.lineTo(mx - ax * sz * 0.4 + px * sz * 0.45, my - ay * sz * 0.4 + py * sz * 0.45);
+        ctx.lineTo(mx - ax * sz * 0.4 - px * sz * 0.45, my - ay * sz * 0.4 - py * sz * 0.45);
+        ctx.closePath(); ctx.fillStyle = COLORS[i]; ctx.fill();
+      }
+
+      const lx = ex + dir.x * 20, ly = ey + dir.y * 20;
+      ctx.font = '600 12px Segoe UI, Roboto, sans-serif';
+      ctx.fillStyle = COLORS[i]; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const sign = v >= 0 ? '+' : '';
+      ctx.fillText(LABELS[i] + ' = ' + sign + v.toFixed(1) + ' A', lx, ly);
+    }
+
+    // Node
+    ctx.beginPath(); ctx.arc(CX, CY, NODE_R, 0, Math.PI * 2);
+    ctx.fillStyle = balanced ? '#5A3EED' : '#e74c3c'; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke();
+    if (balanced) {
+      ctx.beginPath(); ctx.arc(CX, CY, NODE_R + 5, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(90,62,237,0.25)'; ctx.lineWidth = 3; ctx.stroke();
+    }
+    ctx.font = '600 11px Segoe UI'; ctx.fillStyle = '#888'; ctx.textAlign = 'center';
+    ctx.fillText('Node', CX, CY + NODE_R + 14);
+  }
+
+  function update() {
+    const vals = sliders.map(s => parseFloat(s.value));
+    const sum = vals.reduce((a, b) => a + b, 0);
+    const balanced = Math.abs(sum) < 0.05;
+
+    for (let i = 0; i < 4; i++) {
+      const v = vals[i];
+      const sign = v >= 0 ? '+' : '';
+      valEls[i].textContent = sign + v.toFixed(1) + ' A';
+      if (Math.abs(v) < 0.05) dirEls[i].textContent = '→ Zero current';
+      else if (v > 0) dirEls[i].textContent = '→ Into node';
+      else dirEls[i].textContent = '→ Out of node';
+      dirEls[i].style.color = v > 0.05 ? '#2E7D32' : v < -0.05 ? '#D32F2F' : '#777';
+    }
+
+    // Live equation
+    const terms = vals.map((v, i) => {
+      const s = v >= 0 ? '(+' + v.toFixed(1) + ')' : '(\u2212' + Math.abs(v).toFixed(1) + ')';
+      const cls = v > 0.05 ? 'pos' : v < -0.05 ? 'neg' : 'zero';
+      return '<span class="' + cls + '">' + s + '</span>';
+    });
+    const sumStr = Math.abs(sum) < 0.05 ? '<span class="zero">0.0</span>' :
+      (sum > 0 ? '<span class="neg">+' + sum.toFixed(1) + '</span>' : '<span class="neg">\u2212' + Math.abs(sum).toFixed(1) + '</span>');
+    eqEl.innerHTML = terms.join(' + ') + ' = ' + sumStr + ' A';
+
+    const signSum = sum >= 0 ? '+' : '';
+    sumEl.textContent = signSum + sum.toFixed(1) + ' A';
+    sumEl.style.color = balanced ? '#2E7D32' : '#C62828';
+
+    if (balanced) {
+      statusEl.textContent = '\u2713 KCL Verified: \u03A3I = 0';
+      statusEl.className = 'status verified';
+    } else {
+      statusEl.textContent = '\u26A0 KCL Violation: \u03A3I \u2260 0';
+      statusEl.className = 'status warning';
+    }
+    draw();
+  }
+
+  sliders.forEach(s => s.addEventListener('input', update));
+  update();
+})();
+</script>
+</body>
+</html>

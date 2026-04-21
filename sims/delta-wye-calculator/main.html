@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delta-Wye Transformation Calculator</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Roboto','Segoe UI',sans-serif;
+    background:#EEF4FF;
+    color:#1a1a2e;
+    display:flex;justify-content:center;
+    padding:24px 12px;
+    min-height:100vh;
+  }
+  .container{max-width:720px;width:100%}
+  h1{
+    text-align:center;font-size:1.55rem;
+    color:#5A3EED;margin-bottom:6px;
+  }
+  .subtitle{text-align:center;font-size:.88rem;color:#555;margin-bottom:18px}
+  .card{
+    background:#fff;border-radius:12px;
+    padding:20px;margin-bottom:16px;
+    box-shadow:0 2px 10px rgba(90,62,237,.1);
+  }
+  /* Mode toggle */
+  .toggle-row{display:flex;gap:8px;justify-content:center;margin-bottom:18px}
+  .toggle-btn{
+    flex:1;max-width:220px;padding:10px 0;
+    border:2px solid #5A3EED;border-radius:10px;
+    background:#fff;color:#5A3EED;
+    font-size:.92rem;font-weight:600;cursor:pointer;
+    transition:all .2s;
+  }
+  .toggle-btn.active{background:#5A3EED;color:#fff}
+  .toggle-btn:hover:not(.active){background:#f0ebff}
+  /* Sliders */
+  .slider-group{display:flex;flex-direction:column;gap:12px;margin-bottom:4px}
+  .slider-row{display:flex;align-items:center;gap:10px}
+  .slider-row label{min-width:32px;font-weight:600;color:#5A3EED;font-size:.95rem}
+  .slider-row input[type=range]{
+    flex:1;height:6px;-webkit-appearance:none;appearance:none;
+    background:#ddd;border-radius:3px;outline:none;
+  }
+  .slider-row input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:18px;height:18px;
+    border-radius:50%;background:#5A3EED;cursor:pointer;
+  }
+  .slider-row input[type=range]::-moz-range-thumb{
+    width:18px;height:18px;border:none;
+    border-radius:50%;background:#5A3EED;cursor:pointer;
+  }
+  .slider-val{
+    min-width:52px;text-align:right;font-weight:600;
+    font-size:.95rem;color:#333;
+  }
+  /* Canvas */
+  .canvas-wrap{display:flex;justify-content:center;margin:12px 0 8px}
+  canvas{border-radius:12px;background:#fff;max-width:100%}
+  /* Formulas */
+  .formula-card{
+    background:#f8f5ff;border-radius:12px;padding:16px 18px;
+    margin-top:12px;border:1px solid #e0d6ff;
+  }
+  .formula-card h3{font-size:.92rem;color:#5A3EED;margin-bottom:10px}
+  .formula-line{
+    font-size:.88rem;line-height:1.7;color:#333;
+    font-family:'Courier New',monospace;
+  }
+  .formula-line .hl{color:#5A3EED;font-weight:700}
+  .result-val{color:#d6336c;font-weight:700}
+  .section-label{font-size:.8rem;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Delta-Wye Transformation Calculator</h1>
+  <p class="subtitle">Interactive resistor network converter</p>
+
+  <!-- Mode Toggle -->
+  <div class="toggle-row">
+    <button class="toggle-btn active" id="btnDY" onclick="setMode('DY')">Delta &rarr; Wye</button>
+    <button class="toggle-btn" id="btnYD" onclick="setMode('YD')">Wye &rarr; Delta</button>
+  </div>
+
+  <!-- Sliders -->
+  <div class="card">
+    <p class="section-label" id="inputLabel">Input: Delta Resistances</p>
+    <div class="slider-group" id="sliders"></div>
+  </div>
+
+  <!-- Canvas -->
+  <div class="card">
+    <div class="canvas-wrap">
+      <canvas id="cv" width="680" height="320"></canvas>
+    </div>
+  </div>
+
+  <!-- Results & Formulas -->
+  <div class="card">
+    <p class="section-label">Results</p>
+    <div id="results"></div>
+    <div class="formula-card" id="formulas"></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let mode = 'DY'; // DY = Delta->Wye, YD = Wye->Delta
+let vals = [30, 50, 40]; // three input resistors
+let animT = 0, animDir = 1, rafId;
+
+/* ---- Mode ---- */
+function setMode(m){
+  mode = m;
+  $('btnDY').classList.toggle('active', m==='DY');
+  $('btnYD').classList.toggle('active', m==='YD');
+  $('inputLabel').textContent = m==='DY' ? 'Input: Delta Resistances' : 'Input: Wye Resistances';
+  buildSliders();
+  update();
+}
+
+/* ---- Sliders ---- */
+function buildSliders(){
+  const names = mode==='DY' ? ['R<sub>a</sub>','R<sub>b</sub>','R<sub>c</sub>'] : ['R<sub>1</sub>','R<sub>2</sub>','R<sub>3</sub>'];
+  let html = '';
+  for(let i=0;i<3;i++){
+    html += `<div class="slider-row">
+      <label>${names[i]}</label>
+      <input type="range" min="1" max="100" value="${vals[i]}" oninput="vals[${i}]=+this.value;update()">
+      <span class="slider-val" id="sv${i}">${vals[i]} &Omega;</span>
+    </div>`;
+  }
+  $('sliders').innerHTML = html;
+}
+
+/* ---- Calculation ---- */
+function calc(){
+  const [a,b,c] = vals;
+  if(mode==='DY'){
+    const s = a+b+c;
+    return { R1: (a*b)/s, R2: (b*c)/s, R3: (a*c)/s, sum: s };
+  } else {
+    const sp = a*b + b*c + a*c;
+    return { Ra: sp/c, Rb: sp/a, Rc: sp/b, sumProd: sp };
+  }
+}
+
+/* ---- Update ---- */
+function update(){
+  for(let i=0;i<3;i++) $('sv'+i).innerHTML = vals[i]+' &Omega;';
+  const r = calc();
+  showResults(r);
+  showFormulas(r);
+  draw(r);
+}
+
+function showResults(r){
+  let html = '';
+  if(mode==='DY'){
+    html = res('R<sub>1</sub>',r.R1)+res('R<sub>2</sub>',r.R2)+res('R<sub>3</sub>',r.R3);
+  } else {
+    html = res('R<sub>a</sub>',r.Ra)+res('R<sub>b</sub>',r.Rb)+res('R<sub>c</sub>',r.Rc);
+  }
+  $('results').innerHTML = '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px">'+html+'</div>';
+}
+function res(label,v){
+  return `<div style="flex:1;min-width:120px;text-align:center;padding:10px;background:#f0ebff;border-radius:10px">
+    <div style="font-size:.8rem;color:#888">${label}</div>
+    <div style="font-size:1.15rem;font-weight:700;color:#5A3EED">${v.toFixed(2)} &Omega;</div></div>`;
+}
+
+function showFormulas(r){
+  const [a,b,c] = vals;
+  let html = '<h3>Transformation Formulas</h3>';
+  if(mode==='DY'){
+    const s = r.sum;
+    html += fl(`R<sub>1</sub> = (R<sub>a</sub>&middot;R<sub>b</sub>) / (R<sub>a</sub>+R<sub>b</sub>+R<sub>c</sub>)`,
+               `= (${a}&middot;${b}) / (${a}+${b}+${c}) = ${(a*b).toFixed(0)} / ${s.toFixed(0)}`, r.R1);
+    html += fl(`R<sub>2</sub> = (R<sub>b</sub>&middot;R<sub>c</sub>) / (R<sub>a</sub>+R<sub>b</sub>+R<sub>c</sub>)`,
+               `= (${b}&middot;${c}) / ${s.toFixed(0)} = ${(b*c).toFixed(0)} / ${s.toFixed(0)}`, r.R2);
+    html += fl(`R<sub>3</sub> = (R<sub>a</sub>&middot;R<sub>c</sub>) / (R<sub>a</sub>+R<sub>b</sub>+R<sub>c</sub>)`,
+               `= (${a}&middot;${c}) / ${s.toFixed(0)} = ${(a*c).toFixed(0)} / ${s.toFixed(0)}`, r.R3);
+  } else {
+    const sp = r.sumProd;
+    html += fl(`R<sub>a</sub> = (R<sub>1</sub>R<sub>2</sub>+R<sub>2</sub>R<sub>3</sub>+R<sub>1</sub>R<sub>3</sub>) / R<sub>3</sub>`,
+               `= ${sp.toFixed(0)} / ${c}`, r.Ra);
+    html += fl(`R<sub>b</sub> = (R<sub>1</sub>R<sub>2</sub>+R<sub>2</sub>R<sub>3</sub>+R<sub>1</sub>R<sub>3</sub>) / R<sub>1</sub>`,
+               `= ${sp.toFixed(0)} / ${a}`, r.Rb);
+    html += fl(`R<sub>c</sub> = (R<sub>1</sub>R<sub>2</sub>+R<sub>2</sub>R<sub>3</sub>+R<sub>1</sub>R<sub>3</sub>) / R<sub>2</sub>`,
+               `= ${sp.toFixed(0)} / ${b}`, r.Rc);
+  }
+  $('formulas').innerHTML = html;
+}
+function fl(formula, sub, val){
+  return `<div class="formula-line"><span class="hl">${formula}</span><br>&nbsp;&nbsp;${sub} = <span class="result-val">${val.toFixed(2)} &Omega;</span></div>`;
+}
+
+/* ---- Drawing ---- */
+const cv = $('cv'), ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+
+function draw(r){
+  ctx.clearRect(0,0,W,H);
+  const leftCx = 170, rightCx = 510, cy = 160;
+  if(mode==='DY'){
+    drawDelta(leftCx, cy, vals[0], vals[1], vals[2], true);
+    drawWye(rightCx, cy, r.R1, r.R2, r.R3, false);
+  } else {
+    drawWye(leftCx, cy, vals[0], vals[1], vals[2], true);
+    drawDelta(rightCx, cy, r.Ra, r.Rb, r.Rc, false);
+  }
+  drawArrow(290, cy);
+  drawLabels();
+}
+
+function drawDelta(cx, cy, ra, rb, rc, isInput){
+  const s = 90; // half-size
+  // triangle vertices: top, bottom-left, bottom-right
+  const pts = [
+    {x:cx, y:cy-s+10},
+    {x:cx-s, y:cy+s-20},
+    {x:cx+s, y:cy+s-20}
+  ];
+  ctx.save();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = isInput ? '#5A3EED' : '#d6336c';
+  ctx.lineJoin = 'round';
+
+  // Draw triangle sides
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  ctx.lineTo(pts[1].x, pts[1].y);
+  ctx.lineTo(pts[2].x, pts[2].y);
+  ctx.closePath();
+  ctx.stroke();
+
+  // Nodes
+  for(const p of pts){
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 5, 0, Math.PI*2);
+    ctx.fillStyle = isInput ? '#5A3EED' : '#d6336c';
+    ctx.fill();
+  }
+
+  // Resistor labels on edges
+  const col = isInput ? '#5A3EED' : '#d6336c';
+  ctx.font = 'bold 13px Roboto, Segoe UI, sans-serif';
+  ctx.fillStyle = col;
+  ctx.textAlign = 'center';
+
+  // Ra: top to bottom-left (left edge)
+  const mAL = mid(pts[0], pts[1]);
+  resistorLabel(mAL.x - 30, mAL.y - 2, `Ra=${ra.toFixed(1)}`);
+
+  // Rb: top to bottom-right (right edge)
+  const mAR = mid(pts[0], pts[2]);
+  resistorLabel(mAR.x + 30, mAR.y - 2, `Rb=${rb.toFixed(1)}`);
+
+  // Rc: bottom-left to bottom-right (bottom edge)
+  const mB = mid(pts[1], pts[2]);
+  resistorLabel(mB.x, mB.y + 22, `Rc=${rc.toFixed(1)}`);
+
+  // Node labels
+  ctx.font = '11px Roboto, Segoe UI, sans-serif';
+  ctx.fillStyle = '#888';
+  ctx.fillText('1', pts[0].x, pts[0].y - 12);
+  ctx.fillText('2', pts[1].x - 14, pts[1].y + 4);
+  ctx.fillText('3', pts[2].x + 14, pts[2].y + 4);
+
+  // Title
+  ctx.font = 'bold 14px Roboto, Segoe UI, sans-serif';
+  ctx.fillStyle = isInput ? '#5A3EED' : '#d6336c';
+  ctx.fillText('Delta (\u0394)', cx, cy + s + 20);
+
+  ctx.restore();
+}
+
+function drawWye(cx, cy, r1, r2, r3, isInput){
+  const armLen = 70;
+  const center = {x:cx, y:cy - 5};
+  // Three arms: up-left, up-right, down
+  const angles = [-Math.PI/2 - Math.PI/6, -Math.PI/2 + Math.PI/6, Math.PI/2];
+  const ends = angles.map(a => ({
+    x: center.x + Math.cos(a)*armLen,
+    y: center.y + Math.sin(a)*armLen
+  }));
+
+  ctx.save();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = isInput ? '#5A3EED' : '#d6336c';
+
+  // Draw arms
+  for(const e of ends){
+    ctx.beginPath();
+    ctx.moveTo(center.x, center.y);
+    ctx.lineTo(e.x, e.y);
+    ctx.stroke();
+  }
+
+  // Center node
+  ctx.beginPath();
+  ctx.arc(center.x, center.y, 5, 0, Math.PI*2);
+  ctx.fillStyle = '#ff922b';
+  ctx.fill();
+  ctx.strokeStyle = '#ff922b';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // End nodes
+  const col = isInput ? '#5A3EED' : '#d6336c';
+  for(const e of ends){
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, 5, 0, Math.PI*2);
+    ctx.fillStyle = col;
+    ctx.fill();
+  }
+
+  // Resistor labels
+  ctx.font = 'bold 13px Roboto, Segoe UI, sans-serif';
+  ctx.fillStyle = col;
+  ctx.textAlign = 'center';
+
+  const rVals = [r1, r2, r3];
+  const rNames = ['R1', 'R2', 'R3'];
+  const offsets = [{x:-32, y:-8}, {x:32, y:-8}, {x:24, y:14}];
+
+  for(let i=0;i<3;i++){
+    const m = mid(center, ends[i]);
+    resistorLabel(m.x + offsets[i].x, m.y + offsets[i].y,
+      `${rNames[i]}=${rVals[i].toFixed(1)}`);
+  }
+
+  // Node labels
+  ctx.font = '11px Roboto, Segoe UI, sans-serif';
+  ctx.fillStyle = '#888';
+  ctx.fillText('1', ends[0].x - 4, ends[0].y - 12);
+  ctx.fillText('2', ends[1].x + 4, ends[1].y - 12);
+  ctx.fillText('3', ends[2].x, ends[2].y + 18);
+  ctx.fillText('N', center.x + 12, center.y - 8);
+
+  // Title
+  ctx.font = 'bold 14px Roboto, Segoe UI, sans-serif';
+  ctx.fillStyle = isInput ? '#5A3EED' : '#d6336c';
+  ctx.fillText('Wye (Y)', cx, cy + 90 + 15);
+
+  ctx.restore();
+}
+
+function drawArrow(x, cy){
+  // Animated pulsing arrow
+  const pulse = 0.5 + 0.5 * Math.sin(animT * 0.06);
+  const alpha = 0.4 + 0.6 * pulse;
+  const dx = 4 * Math.sin(animT * 0.08);
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = '#5A3EED';
+  ctx.strokeStyle = '#5A3EED';
+  ctx.lineWidth = 3;
+
+  // Shaft
+  const sx = x + dx, ex = x + 50 + dx;
+  ctx.beginPath();
+  ctx.moveTo(sx, cy);
+  ctx.lineTo(ex - 10, cy);
+  ctx.stroke();
+
+  // Arrowhead
+  ctx.beginPath();
+  ctx.moveTo(ex, cy);
+  ctx.lineTo(ex - 14, cy - 8);
+  ctx.lineTo(ex - 14, cy + 8);
+  ctx.closePath();
+  ctx.fill();
+
+  // Direction label
+  ctx.globalAlpha = 0.7;
+  ctx.font = 'bold 11px Roboto, Segoe UI, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(mode === 'DY' ? '\u0394 \u2192 Y' : 'Y \u2192 \u0394', x + 25, cy - 18);
+
+  ctx.restore();
+}
+
+function drawLabels(){
+  ctx.save();
+  ctx.font = '12px Roboto, Segoe UI, sans-serif';
+  ctx.fillStyle = '#aaa';
+  ctx.textAlign = 'center';
+  ctx.fillText(mode==='DY' ? 'INPUT' : 'OUTPUT', 170, 28);
+  ctx.fillText(mode==='DY' ? 'OUTPUT' : 'INPUT', 510, 28);
+  ctx.restore();
+}
+
+function resistorLabel(x, y, text){
+  const w = ctx.measureText(text).width + 10;
+  ctx.save();
+  ctx.fillStyle = '#ffffffcc';
+  ctx.beginPath();
+  ctx.roundRect(x - w/2, y - 9, w, 18, 4);
+  ctx.fill();
+  ctx.restore();
+  ctx.fillText(text, x, y + 4);
+}
+
+function mid(a, b){ return {x:(a.x+b.x)/2, y:(a.y+b.y)/2}; }
+
+/* ---- Animation loop ---- */
+function animate(){
+  animT++;
+  const r = calc();
+  draw(r);
+  rafId = requestAnimationFrame(animate);
+}
+
+/* ---- Init ---- */
+buildSliders();
+update();
+animate();
+</script>
+</body>
+</html>
